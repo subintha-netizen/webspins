@@ -67,6 +67,10 @@
             border-radius: 8px;
         }
 
+        #a4-paper.landscape {
+            aspect-ratio: 297 / 210;
+        }
+
         /* Object on A4 */
         .a4-object {
             position: absolute;
@@ -92,33 +96,92 @@
             object-fit: contain;
             pointer-events: none;
             border-radius: 4px;
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: crisp-edges;
         }
 
         /* Image Frame (placeholder) */
         .image-frame {
+            width: 100%;
+            height: 100%;
             border: 3px dashed #cbd5e1;
             background: rgba(241, 245, 249, 0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #94a3b8;
-            font-size: 14px;
-            font-weight: 500;
-            text-align: center;
-            padding: 16px;
             transition: all 0.3s ease;
         }
 
         .image-frame:hover {
             border-color: #667eea;
             background: rgba(102, 126, 234, 0.05);
-            color: #667eea;
         }
 
         .image-frame.drag-over {
             border-color: #667eea;
             background: rgba(102, 126, 234, 0.1);
-            color: #667eea;
+        }
+
+        /* Grid Frame Layouts */
+        .frame-grid {
+            display: grid;
+            gap: 8px;
+            width: 100%;
+            height: 100%;
+            padding: 8px;
+        }
+
+        .frame-grid-1 {
+            grid-template-columns: 1fr;
+            grid-template-rows: 1fr;
+        }
+
+        .frame-grid-2 {
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr;
+        }
+
+        .frame-grid-4 {
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+        }
+
+        .frame-grid-6 {
+            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+        }
+
+        .grid-cell {
+            border: 2px dashed #cbd5e1;
+            background: rgba(248, 250, 252, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            border-radius: 4px;
+            min-height: 50px;
+        }
+
+        .grid-cell:hover {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .grid-cell.drag-over {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .grid-cell img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: crisp-edges;
+        }
+
+        .grid-cell-placeholder {
+            color: #cbd5e1;
+            font-size: 12px;
+            text-align: center;
         }
 
         /* Resize handle */
@@ -181,7 +244,7 @@
             border-color: #f43f5e;
         }
 
-        /* Text certification styling - NO BORDER, NO BACKGROUND */
+        /* Text certification styling */
         .text-certification {
             padding: 16px;
             text-align: center;
@@ -525,6 +588,35 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
+
+        /* Radio buttons for orientation */
+        .radio-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        .radio-btn {
+            flex: 1;
+            padding: 8px 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .radio-btn:hover {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .radio-btn.active {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -576,6 +668,24 @@
                     <p class="text-sm text-slate-600 mt-1">จัดเรียงรูปภาพและเอกสารอย่างมืออาชีพ</p>
                 </div>
 
+                <!-- Paper Orientation -->
+                <div class="sidebar-section fade-in">
+                    <div class="section-header">
+                        <i data-lucide="rotate-3d" class="w-5 h-5"></i>
+                        <span>แนวกระดาษ</span>
+                    </div>
+                    <div class="radio-group">
+                        <div class="radio-btn active" id="orientationPortrait" data-orientation="portrait">
+                            <i data-lucide="smartphone" class="w-4 h-4 inline-block mb-1"></i>
+                            <div class="text-xs">แนวตั้ง</div>
+                        </div>
+                        <div class="radio-btn" id="orientationLandscape" data-orientation="landscape">
+                            <i data-lucide="monitor" class="w-4 h-4 inline-block mb-1"></i>
+                            <div class="text-xs">แนวนอน</div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Upload Images -->
                 <div class="sidebar-section fade-in">
                     <div class="section-header">
@@ -603,6 +713,12 @@
                         <i data-lucide="frame" class="w-5 h-5"></i>
                         <span>เฟรมรวมภาพ</span>
                     </div>
+                    <select id="frameTypeSelect" class="w-full px-3 py-2.5 border-2 border-slate-200 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent mb-2 cursor-pointer">
+                        <option value="1">1 ภาพ</option>
+                        <option value="2">2 ภาพ (แนวนอน)</option>
+                        <option value="4">4 ภาพ (2x2)</option>
+                        <option value="6">6 ภาพ (3x2)</option>
+                    </select>
                     <button
                         id="addImageFrameBtn"
                         class="w-full px-4 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-lg hover:from-cyan-600 hover:to-blue-600 transition-all text-sm font-semibold shadow-md hover:shadow-lg flex items-center justify-center gap-2"
@@ -734,23 +850,19 @@
                     <div id="instructionsContent" class="mt-3 text-xs text-slate-600 space-y-2 hidden">
                         <div class="flex items-start gap-2">
                             <span class="text-purple-600">•</span>
-                            <p>อัปโหลดรูปภาพหลายไฟล์พร้อมกัน</p>
+                            <p>เลือกแนวกระดาษ: แนวตั้ง หรือ แนวนอน</p>
                         </div>
                         <div class="flex items-start gap-2">
                             <span class="text-purple-600">•</span>
-                            <p>คลิก "เพิ่มเฟรมรูปภาพ" แล้วลากรูปมาวางในเฟรม</p>
+                            <p>เลือกเฟรม 1/2/4/6 ภาพ แล้วลากรูปมาวาง</p>
                         </div>
                         <div class="flex items-start gap-2">
                             <span class="text-purple-600">•</span>
-                            <p>เปิด "รับรองสำเนา" กด "ขยายแป้นเซ็น" เพื่อเซ็นชื่อ</p>
+                            <p>เปิด "รับรองสำเนา" กด "ขยายแป้นเซ็น"</p>
                         </div>
                         <div class="flex items-start gap-2">
                             <span class="text-purple-600">•</span>
-                            <p>ลากเพื่อย้าย, ใช้มุมขวาล่างเพื่อปรับขนาด</p>
-                        </div>
-                        <div class="flex items-start gap-2">
-                            <span class="text-purple-600">•</span>
-                            <p>ดาวน์โหลดเป็น PDF หรือ JPG ขนาด A4</p>
+                            <p>ดาวน์โหลดเป็น PDF หรือ JPG คุณภาพสูง</p>
                         </div>
                     </div>
                 </div>
@@ -763,10 +875,12 @@
         </div>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dom-to-image/2.6.0/dom-to-image.min.js"></script>
+
     <script>
         // ============================================
-        // A4 Image Layout Application v2.1
-        // Enhanced with signature modal and image frames
+        // A4 Image Layout Application v3.0
+        // Multi-image frames + Orientation + High Quality Export
         // ============================================
 
         (function() {
@@ -785,6 +899,7 @@
                 isDrawing: false,
                 dragOffset: { x: 0, y: 0 },
                 resizeStart: { x: 0, y: 0, width: 0, height: 0 },
+                orientation: 'portrait', // portrait or landscape
                 certification: {
                     show: false,
                     name: '(นายสมศักดิ์ รักชาติ)',
@@ -800,7 +915,10 @@
             const elements = {
                 paper: document.getElementById('a4-paper'),
                 imageUpload: document.getElementById('imageUpload'),
+                frameTypeSelect: document.getElementById('frameTypeSelect'),
                 addImageFrameBtn: document.getElementById('addImageFrameBtn'),
+                orientationPortrait: document.getElementById('orientationPortrait'),
+                orientationLandscape: document.getElementById('orientationLandscape'),
                 showCertification: document.getElementById('showCertification'),
                 certificationControls: document.getElementById('certificationControls'),
                 certifierName: document.getElementById('certifierName'),
@@ -867,6 +985,24 @@
             }
 
             // ============================================
+            // Orientation Management
+            // ============================================
+
+            function setOrientation(orientation) {
+                state.orientation = orientation;
+
+                if (orientation === 'portrait') {
+                    elements.paper.classList.remove('landscape');
+                    elements.orientationPortrait.classList.add('active');
+                    elements.orientationLandscape.classList.remove('active');
+                } else {
+                    elements.paper.classList.add('landscape');
+                    elements.orientationLandscape.classList.add('active');
+                    elements.orientationPortrait.classList.remove('active');
+                }
+            }
+
+            // ============================================
             // Object Management
             // ============================================
 
@@ -917,35 +1053,37 @@
             }
 
             // ============================================
-            // Image Frame
+            // Image Frame (Multi-grid support)
             // ============================================
 
             function addImageFrame() {
                 const paperRect = elements.paper.getBoundingClientRect();
+                const frameType = parseInt(elements.frameTypeSelect.value);
 
                 const frameObj = {
                     id: generateId(),
                     type: 'frame',
-                    x: paperRect.width / 2 - 150,
-                    y: paperRect.height / 2 - 100,
-                    width: 300,
-                    height: 200,
+                    x: paperRect.width / 2 - 200,
+                    y: paperRect.height / 2 - 150,
+                    width: 400,
+                    height: 300,
                     rotation: 0,
-                    imageSrc: null
+                    frameType: frameType, // 1, 2, 4, or 6
+                    images: new Array(frameType).fill(null) // Array to hold image sources
                 };
 
                 addObject(frameObj);
                 selectObject(frameObj.id);
             }
 
-            function handleFrameDrop(frameId, file) {
+            function handleFrameDrop(frameId, cellIndex, file) {
                 if (!file.type.match('image.*')) return;
 
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     const obj = getObjectById(frameId);
                     if (obj && obj.type === 'frame') {
-                        obj.imageSrc = e.target.result;
+                        obj.images[cellIndex] = e.target.result;
                         updateObjectElement(obj);
                     }
                 };
@@ -1100,7 +1238,6 @@
 
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-                // Draw existing strokes
                 if (state.certification.signatureStrokes && state.certification.signatureStrokes.length > 0) {
                     ctx.strokeStyle = '#1e293b';
                     ctx.lineWidth = 4;
@@ -1129,7 +1266,6 @@
                 closeSignatureModalFn();
             }
 
-            // Setup modal canvas drawing
             function setupModalCanvas() {
                 const canvas = elements.signatureModalCanvas;
                 let isDrawing = false;
@@ -1200,91 +1336,9 @@
                     img.alt = 'Uploaded image';
                     div.appendChild(img);
                 } else if (obj.type === 'frame') {
-                    const frameDiv = document.createElement('div');
-                    frameDiv.className = 'image-frame';
-
-                    if (obj.imageSrc) {
-                        const img = document.createElement('img');
-                        img.src = obj.imageSrc;
-                        img.style.width = '100%';
-                        img.style.height = '100%';
-                        img.style.objectFit = 'contain';
-                        frameDiv.appendChild(img);
-                    } else {
-                        frameDiv.innerHTML = '<div><i data-lucide="image" class="w-8 h-8 mx-auto mb-2"></i><br>ลากรูปมาวางที่นี่</div>';
-                    }
-
-                    // Drag and drop
-                    frameDiv.addEventListener('dragover', (e) => {
-                        e.preventDefault();
-                        frameDiv.classList.add('drag-over');
-                    });
-
-                    frameDiv.addEventListener('dragleave', () => {
-                        frameDiv.classList.remove('drag-over');
-                    });
-
-                    frameDiv.addEventListener('drop', (e) => {
-                        e.preventDefault();
-                        frameDiv.classList.remove('drag-over');
-
-                        const files = e.dataTransfer.files;
-                        if (files.length > 0) {
-                            handleFrameDrop(obj.id, files[0]);
-                        }
-                    });
-
-                    div.appendChild(frameDiv);
+                    renderFrame(div, obj);
                 } else if (obj.type === 'text') {
-                    const textDiv = document.createElement('div');
-                    textDiv.className = 'text-certification';
-
-                    const line1 = document.createElement('div');
-                    line1.className = 'line1';
-                    line1.textContent = 'สำเนาถูกต้อง';
-                    textDiv.appendChild(line1);
-
-                    const sigArea = document.createElement('div');
-                    sigArea.className = 'signature-area';
-                    sigArea.style.marginTop = '8px';
-
-                    const canvas = document.createElement('canvas');
-                    canvas.className = 'signature-canvas';
-                    canvas.width = 220 * 2;
-                    canvas.height = 80 * 2;
-                    canvas.style.width = '220px';
-                    canvas.style.height = '80px';
-
-                    sigArea.appendChild(canvas);
-                    textDiv.appendChild(sigArea);
-
-                    if (obj.signatureStrokes && obj.signatureStrokes.length > 0) {
-                        renderSignatureStrokes(canvas, obj.signatureStrokes);
-                    } else {
-                        const ctx = canvas.getContext('2d');
-                        ctx.clearRect(0, 0, canvas.width, canvas.height);
-                        ctx.font = '24px Sarabun';
-                        ctx.fillStyle = '#94a3b8';
-                        ctx.textAlign = 'center';
-                        ctx.fillText('(วาดลายเซ็นที่นี่)', canvas.width / 2, canvas.height / 2 + 8);
-                    }
-
-                    canvas.addEventListener('mousedown', (e) => startDrawing(e, canvas, obj));
-                    canvas.addEventListener('touchstart', (e) => startDrawing(e, canvas, obj), { passive: false });
-
-                    const line2 = document.createElement('div');
-                    line2.className = 'line2';
-                    line2.style.marginTop = obj.gap1 + 'px';
-                    line2.textContent = obj.name;
-                    textDiv.appendChild(line2);
-
-                    const line3 = document.createElement('div');
-                    line3.className = 'line3';
-                    line3.style.marginTop = obj.gap2 + 'px';
-                    line3.textContent = `วันที่ ${getThaiDate()}`;
-                    textDiv.appendChild(line3);
-
-                    div.appendChild(textDiv);
+                    renderCertificationText(div, obj);
                 }
 
                 // Control buttons
@@ -1337,6 +1391,111 @@
                 }
             }
 
+            function renderFrame(container, obj) {
+                const gridDiv = document.createElement('div');
+                gridDiv.className = `frame-grid frame-grid-${obj.frameType}`;
+
+                for (let i = 0; i < obj.frameType; i++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'grid-cell';
+                    cell.dataset.cellIndex = i;
+
+                    if (obj.images[i]) {
+                        const img = document.createElement('img');
+                        img.src = obj.images[i];
+                        cell.appendChild(img);
+                    } else {
+                        const placeholder = document.createElement('div');
+                        placeholder.className = 'grid-cell-placeholder';
+                        placeholder.innerHTML = `<i data-lucide="image" class="w-6 h-6"></i>`;
+                        cell.appendChild(placeholder);
+                    }
+
+                    // Drag and drop
+                    cell.addEventListener('dragover', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        cell.classList.add('drag-over');
+                    });
+
+                    cell.addEventListener('dragleave', (e) => {
+                        e.stopPropagation();
+                        cell.classList.remove('drag-over');
+                    });
+
+                    cell.addEventListener('drop', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        cell.classList.remove('drag-over');
+
+                        const files = e.dataTransfer.files;
+                        if (files.length > 0) {
+                            handleFrameDrop(obj.id, i, files[0]);
+                        }
+                    });
+
+                    gridDiv.appendChild(cell);
+                }
+
+                container.appendChild(gridDiv);
+
+                if (window.lucide) {
+                    window.lucide.createIcons();
+                }
+            }
+
+            function renderCertificationText(container, obj) {
+                const textDiv = document.createElement('div');
+                textDiv.className = 'text-certification';
+
+                const line1 = document.createElement('div');
+                line1.className = 'line1';
+                line1.textContent = 'สำเนาถูกต้อง';
+                textDiv.appendChild(line1);
+
+                const sigArea = document.createElement('div');
+                sigArea.className = 'signature-area';
+                sigArea.style.marginTop = '8px';
+
+                const canvas = document.createElement('canvas');
+                canvas.className = 'signature-canvas';
+                canvas.width = 220 * 2;
+                canvas.height = 80 * 2;
+                canvas.style.width = '220px';
+                canvas.style.height = '80px';
+
+                sigArea.appendChild(canvas);
+                textDiv.appendChild(sigArea);
+
+                if (obj.signatureStrokes && obj.signatureStrokes.length > 0) {
+                    renderSignatureStrokes(canvas, obj.signatureStrokes);
+                } else {
+                    const ctx = canvas.getContext('2d');
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.font = '24px Sarabun';
+                    ctx.fillStyle = '#94a3b8';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('(วาดลายเซ็นที่นี่)', canvas.width / 2, canvas.height / 2 + 8);
+                }
+
+                canvas.addEventListener('mousedown', (e) => startDrawing(e, canvas, obj));
+                canvas.addEventListener('touchstart', (e) => startDrawing(e, canvas, obj), { passive: false });
+
+                const line2 = document.createElement('div');
+                line2.className = 'line2';
+                line2.style.marginTop = obj.gap1 + 'px';
+                line2.textContent = obj.name;
+                textDiv.appendChild(line2);
+
+                const line3 = document.createElement('div');
+                line3.className = 'line3';
+                line3.style.marginTop = obj.gap2 + 'px';
+                line3.textContent = `วันที่ ${getThaiDate()}`;
+                textDiv.appendChild(line3);
+
+                container.appendChild(textDiv);
+            }
+
             function updateObjectElement(obj) {
                 const element = document.getElementById(obj.id);
                 if (!element) return;
@@ -1348,24 +1507,12 @@
                 element.style.transform = `rotate(${obj.rotation}deg)`;
 
                 if (obj.type === 'frame') {
-                    const frameDiv = element.querySelector('.image-frame');
-                    if (frameDiv) {
-                        frameDiv.innerHTML = '';
-                        if (obj.imageSrc) {
-                            const img = document.createElement('img');
-                            img.src = obj.imageSrc;
-                            img.style.width = '100%';
-                            img.style.height = '100%';
-                            img.style.objectFit = 'contain';
-                            frameDiv.appendChild(img);
-                        } else {
-                            frameDiv.innerHTML = '<div><i data-lucide="image" class="w-8 h-8 mx-auto mb-2"></i><br>ลากรูปมาวางที่นี่</div>';
-                        }
-
-                        if (window.lucide) {
-                            window.lucide.createIcons();
-                        }
+                    // Remove old grid and re-render
+                    const oldGrid = element.querySelector('.frame-grid');
+                    if (oldGrid) {
+                        oldGrid.remove();
                     }
+                    renderFrame(element, obj);
                 } else if (obj.type === 'text') {
                     const textDiv = element.querySelector('.text-certification');
                     if (textDiv) {
@@ -1518,6 +1665,7 @@
             function startDrag(event, id) {
                 if (event.target.tagName === 'CANVAS') return;
                 if (event.target.closest('.control-buttons') || event.target.closest('.resize-handle')) return;
+                if (event.target.closest('.grid-cell')) return; // Don't drag when clicking grid cells
 
                 event.preventDefault();
                 event.stopPropagation();
@@ -1624,7 +1772,7 @@
             }
 
             // ============================================
-            // Export (Download) - FIXED FOR A4 SIZE
+            // Export (Download) - HIGH QUALITY
             // ============================================
 
             async function exportToPDF() {
@@ -1638,27 +1786,29 @@
                 });
 
                 try {
-                    const canvas = await html2canvas(elements.paper, {
-                        scale: 4,
-                        useCORS: true,
-                        backgroundColor: '#ffffff',
-                        logging: false,
-                        allowTaint: true
+                    const dataUrl = await domtoimage.toPng(elements.paper, {
+                        quality: 1.0,
+                        width: elements.paper.offsetWidth * 4,
+                        height: elements.paper.offsetHeight * 4,
+                        style: {
+                            transform: 'scale(4)',
+                            transformOrigin: 'top left',
+                            width: elements.paper.offsetWidth + 'px',
+                            height: elements.paper.offsetHeight + 'px'
+                        }
                     });
-
-                    const imgData = canvas.toDataURL('image/jpeg', 1.0);
 
                     const { jsPDF } = window.jspdf;
                     const pdf = new jsPDF({
-                        orientation: 'portrait',
+                        orientation: state.orientation === 'portrait' ? 'portrait' : 'landscape',
                         unit: 'mm',
                         format: 'a4'
                     });
 
-                    const pdfWidth = 210;
-                    const pdfHeight = 297;
+                    const pdfWidth = state.orientation === 'portrait' ? 210 : 297;
+                    const pdfHeight = state.orientation === 'portrait' ? 297 : 210;
 
-                    pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+                    pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
                     pdf.save(`A4-Document-${Date.now()}.pdf`);
 
                 } catch (error) {
@@ -1683,27 +1833,27 @@
                 });
 
                 try {
-                    const canvas = await html2canvas(elements.paper, {
-                        scale: 4,
-                        useCORS: true,
-                        backgroundColor: '#ffffff',
-                        logging: false,
-                        allowTaint: true
+                    const dataUrl = await domtoimage.toJpeg(elements.paper, {
+                        quality: 1.0,
+                        width: elements.paper.offsetWidth * 4,
+                        height: elements.paper.offsetHeight * 4,
+                        style: {
+                            transform: 'scale(4)',
+                            transformOrigin: 'top left',
+                            width: elements.paper.offsetWidth + 'px',
+                            height: elements.paper.offsetHeight + 'px'
+                        }
                     });
 
-                    canvas.toBlob((blob) => {
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = `A4-Document-${Date.now()}.jpg`;
-                        a.click();
-                        URL.revokeObjectURL(url);
+                    const a = document.createElement('a');
+                    a.href = dataUrl;
+                    a.download = `A4-Document-${Date.now()}.jpg`;
+                    a.click();
 
-                        hideLoading();
-                        if (state.selectedId) {
-                            selectObject(state.selectedId);
-                        }
-                    }, 'image/jpeg', 1.0);
+                    hideLoading();
+                    if (state.selectedId) {
+                        selectObject(state.selectedId);
+                    }
 
                 } catch (error) {
                     console.error('Export to JPG failed:', error);
@@ -1721,6 +1871,9 @@
 
             elements.imageUpload.addEventListener('change', handleImageUpload);
             elements.addImageFrameBtn.addEventListener('click', addImageFrame);
+
+            elements.orientationPortrait.addEventListener('click', () => setOrientation('portrait'));
+            elements.orientationLandscape.addEventListener('click', () => setOrientation('landscape'));
 
             elements.showCertification.addEventListener('change', (e) => {
                 state.certification.show = e.target.checked;
@@ -1810,7 +1963,7 @@
                 window.lucide.createIcons();
             }
 
-            console.log('A4 Image Layout v2.1 initialized successfully.');
+            console.log('A4 Image Layout v3.0 initialized successfully.');
 
         })();
     </script>
