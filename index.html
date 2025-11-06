@@ -1,0 +1,1213 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A4 Image Layout - จัดเรียงรูปภาพ/ข้อความรับรอง/ลายเซ็น บนกระดาษ A4</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Google Fonts: Sarabun -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- html2canvas -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <!-- jsPDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <style>
+        * {
+            font-family: 'Sarabun', 'Inter', sans-serif;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        /* A4 Paper Area */
+        #a4-paper {
+            position: relative;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            aspect-ratio: 210 / 297;
+            width: 100%;
+            max-width: 100%;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        /* Object on A4 */
+        .a4-object {
+            position: absolute;
+            cursor: move;
+            touch-action: none;
+            user-select: none;
+        }
+
+        .a4-object.selected {
+            outline: 2px solid #3b82f6;
+            outline-offset: 2px;
+        }
+
+        .a4-object img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            pointer-events: none;
+        }
+
+        .a4-object canvas {
+            width: 100%;
+            height: 100%;
+            pointer-events: auto;
+        }
+
+        /* Resize handle */
+        .resize-handle {
+            position: absolute;
+            bottom: -6px;
+            right: -6px;
+            width: 12px;
+            height: 12px;
+            background: #3b82f6;
+            border: 2px solid white;
+            border-radius: 50%;
+            cursor: nwse-resize;
+            z-index: 10;
+        }
+
+        /* Control buttons */
+        .control-buttons {
+            position: absolute;
+            top: -36px;
+            right: 0;
+            display: flex;
+            gap: 4px;
+            z-index: 10;
+        }
+
+        .control-btn {
+            width: 28px;
+            height: 28px;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .control-btn:hover {
+            background: #f3f4f6;
+            border-color: #3b82f6;
+        }
+
+        /* Text certification styling */
+        .text-certification {
+            padding: 12px;
+            text-align: center;
+            line-height: 1.5;
+        }
+
+        .text-certification .line1 {
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        .text-certification .line2 {
+            font-weight: 400;
+            font-size: 15px;
+        }
+
+        .text-certification .line3 {
+            font-style: italic;
+            font-size: 14px;
+        }
+
+        /* Signature canvas */
+        .signature-canvas {
+            border: 1px dashed #d1d5db;
+            background: transparent;
+            cursor: crosshair;
+        }
+
+        /* Loading overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        .spinner {
+            border: 4px solid #f3f4f6;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        /* Responsive: Mobile */
+        @media (max-width: 768px) {
+            .control-buttons {
+                top: auto;
+                bottom: -36px;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="flex flex-col md:flex-row h-screen">
+        <!-- Sidebar -->
+        <div class="w-full md:w-80 bg-white border-b md:border-r border-gray-200 overflow-y-auto" style="max-height: 50vh;" id="sidebar">
+            <div class="p-4 space-y-4">
+                <!-- Header -->
+                <div class="text-center mb-4">
+                    <h1 class="text-xl font-bold text-gray-800">A4 Image Layout</h1>
+                    <p class="text-sm text-gray-500">จัดเรียงรูปภาพและข้อความบนกระดาษ A4</p>
+                </div>
+
+                <!-- Upload Images -->
+                <div class="space-y-2">
+                    <label class="block text-sm font-semibold text-gray-700">
+                        <i data-lucide="upload" class="inline-block w-4 h-4 mr-1"></i>
+                        อัปโหลดรูปภาพ
+                    </label>
+                    <input
+                        type="file"
+                        id="imageUpload"
+                        accept=".jpg,.jpeg,.png,.gif,.webp"
+                        multiple
+                        class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
+                        aria-label="อัปโหลดรูปภาพ"
+                    >
+                    <p class="text-xs text-gray-500">รองรับ: JPG, PNG, GIF, WebP</p>
+                </div>
+
+                <!-- Text Certification -->
+                <div class="space-y-3 border-t pt-4">
+                    <div class="flex items-center justify-between">
+                        <label class="text-sm font-semibold text-gray-700">
+                            <i data-lucide="file-text" class="inline-block w-4 h-4 mr-1"></i>
+                            ข้อความรับรองสำเนาถูกต้อง
+                        </label>
+                        <input
+                            type="checkbox"
+                            id="showCertification"
+                            class="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                            aria-label="แสดง/ซ่อนข้อความรับรอง"
+                        >
+                    </div>
+
+                    <div id="certificationControls" class="space-y-3 hidden">
+                        <div>
+                            <label class="block text-xs text-gray-600 mb-1">ชื่อผู้รับรอง</label>
+                            <input
+                                type="text"
+                                id="certifierName"
+                                value="(นายสมศักดิ์ รักชาติ)"
+                                placeholder="(นายสมศักดิ์ รักชาติ)"
+                                class="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                aria-label="ชื่อผู้รับรอง"
+                            >
+                        </div>
+
+                        <div>
+                            <label class="block text-xs text-gray-600 mb-1">
+                                ระยะห่าง: "สำเนาถูกต้อง" ↔ "ชื่อ" (<span id="gap1Value">10</span>px)
+                            </label>
+                            <input
+                                type="range"
+                                id="gap1Slider"
+                                min="0"
+                                max="30"
+                                value="10"
+                                class="w-full"
+                                aria-label="ปรับระยะห่างบรรทัด 1-2"
+                            >
+                        </div>
+
+                        <div>
+                            <label class="block text-xs text-gray-600 mb-1">
+                                ระยะห่าง: "ชื่อ" ↔ "วันที่" (<span id="gap2Value">10</span>px)
+                            </label>
+                            <input
+                                type="range"
+                                id="gap2Slider"
+                                min="0"
+                                max="30"
+                                value="10"
+                                class="w-full"
+                                aria-label="ปรับระยะห่างบรรทัด 2-3"
+                            >
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Signature -->
+                <div class="space-y-2 border-t pt-4">
+                    <label class="block text-sm font-semibold text-gray-700">
+                        <i data-lucide="pen-line" class="inline-block w-4 h-4 mr-1"></i>
+                        ลายเซ็น
+                    </label>
+                    <button
+                        id="addSignatureBtn"
+                        class="w-full px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition text-sm font-medium"
+                        aria-label="เพิ่มลายเซ็น"
+                    >
+                        <i data-lucide="plus" class="inline-block w-4 h-4 mr-1"></i>
+                        เพิ่มลายเซ็น
+                    </button>
+                </div>
+
+                <!-- Download -->
+                <div class="space-y-2 border-t pt-4">
+                    <label class="block text-sm font-semibold text-gray-700">
+                        <i data-lucide="download" class="inline-block w-4 h-4 mr-1"></i>
+                        ดาวน์โหลด
+                    </label>
+                    <select
+                        id="exportFormat"
+                        class="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        aria-label="เลือกรูปแบบไฟล์"
+                    >
+                        <option value="pdf">PDF (.pdf)</option>
+                        <option value="jpg">JPG (.jpg)</option>
+                    </select>
+                    <button
+                        id="downloadBtn"
+                        class="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition text-sm font-medium"
+                        aria-label="ดาวน์โหลดไฟล์"
+                    >
+                        <i data-lucide="download" class="inline-block w-4 h-4 mr-1"></i>
+                        ดาวน์โหลด
+                    </button>
+                </div>
+
+                <!-- Instructions (collapsed on mobile) -->
+                <div class="border-t pt-4">
+                    <button
+                        id="instructionsToggle"
+                        class="flex items-center justify-between w-full text-sm font-semibold text-gray-700"
+                    >
+                        <span>
+                            <i data-lucide="help-circle" class="inline-block w-4 h-4 mr-1"></i>
+                            วิธีใช้
+                        </span>
+                        <i data-lucide="chevron-down" class="w-4 h-4" id="instructionsIcon"></i>
+                    </button>
+                    <div id="instructionsContent" class="mt-2 text-xs text-gray-600 space-y-1 hidden">
+                        <p>• อัปโหลดรูปภาพหลายไฟล์พร้อมกัน</p>
+                        <p>• คลิก/แตะเพื่อเลือกวัตถุ</p>
+                        <p>• ลากเพื่อย้าย ปรับขนาดที่มุมขวาล่าง</p>
+                        <p>• หมุน/ลบได้ที่ปุ่มด้านบน</p>
+                        <p>• ลายเซ็นวาดด้วยเมาส์/นิ้ว</p>
+                        <p>• ดาวน์โหลดเป็น PDF หรือ JPG</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- A4 Paper Area -->
+        <div class="flex-1 overflow-auto p-4 md:p-8 flex items-center justify-center" id="paperContainer">
+            <div id="a4-paper"></div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // A4 Image Layout Application
+        // Version: 1.0
+        // Libraries: Tailwind CSS, Lucide Icons, html2canvas, jsPDF
+        // ============================================
+
+        (function() {
+            'use strict';
+
+            // ============================================
+            // State Management
+            // ============================================
+            const state = {
+                objects: [],
+                selectedId: null,
+                nextId: 1,
+                defaultImageSize: null, // Store first uploaded image size
+                isDragging: false,
+                isResizing: false,
+                isDrawing: false,
+                dragOffset: { x: 0, y: 0 },
+                resizeStart: { x: 0, y: 0, width: 0, height: 0 },
+                certification: {
+                    show: false,
+                    name: '(นายสมศักดิ์ รักชาติ)',
+                    gap1: 10,
+                    gap2: 10
+                }
+            };
+
+            // ============================================
+            // DOM Elements
+            // ============================================
+            const elements = {
+                paper: document.getElementById('a4-paper'),
+                imageUpload: document.getElementById('imageUpload'),
+                showCertification: document.getElementById('showCertification'),
+                certificationControls: document.getElementById('certificationControls'),
+                certifierName: document.getElementById('certifierName'),
+                gap1Slider: document.getElementById('gap1Slider'),
+                gap2Slider: document.getElementById('gap2Slider'),
+                gap1Value: document.getElementById('gap1Value'),
+                gap2Value: document.getElementById('gap2Value'),
+                addSignatureBtn: document.getElementById('addSignatureBtn'),
+                exportFormat: document.getElementById('exportFormat'),
+                downloadBtn: document.getElementById('downloadBtn'),
+                loadingOverlay: document.getElementById('loadingOverlay'),
+                instructionsToggle: document.getElementById('instructionsToggle'),
+                instructionsContent: document.getElementById('instructionsContent'),
+                instructionsIcon: document.getElementById('instructionsIcon')
+            };
+
+            // ============================================
+            // Utility Functions
+            // ============================================
+
+            function generateId() {
+                return `obj-${state.nextId++}`;
+            }
+
+            function getThaiDate() {
+                const date = new Date();
+                const formatter = new Intl.DateTimeFormat('th-TH', {
+                    dateStyle: 'long',
+                    timeZone: 'Asia/Bangkok'
+                });
+                let thaiDate = formatter.format(date);
+                // Convert to Buddhist Era (BE) by adding 543 to year
+                const year = date.getFullYear();
+                const beYear = year + 543;
+                thaiDate = thaiDate.replace(year.toString(), beYear.toString());
+                return thaiDate;
+            }
+
+            function clamp(value, min, max) {
+                return Math.max(min, Math.min(max, value));
+            }
+
+            function getRelativePosition(event, element) {
+                const rect = element.getBoundingClientRect();
+                const clientX = event.clientX || (event.touches && event.touches[0].clientX);
+                const clientY = event.clientY || (event.touches && event.touches[0].clientY);
+                return {
+                    x: clientX - rect.left,
+                    y: clientY - rect.top
+                };
+            }
+
+            function showLoading() {
+                elements.loadingOverlay.classList.add('active');
+            }
+
+            function hideLoading() {
+                elements.loadingOverlay.classList.remove('active');
+            }
+
+            // ============================================
+            // Object Management
+            // ============================================
+
+            function addObject(obj) {
+                state.objects.push(obj);
+                renderObject(obj);
+            }
+
+            function removeObject(id) {
+                const index = state.objects.findIndex(o => o.id === id);
+                if (index !== -1) {
+                    state.objects.splice(index, 1);
+                    const element = document.getElementById(id);
+                    if (element) {
+                        element.remove();
+                    }
+                }
+            }
+
+            function selectObject(id) {
+                state.selectedId = id;
+                document.querySelectorAll('.a4-object').forEach(el => {
+                    el.classList.remove('selected');
+                    const controls = el.querySelector('.control-buttons');
+                    const handle = el.querySelector('.resize-handle');
+                    if (controls) controls.style.display = 'none';
+                    if (handle) handle.style.display = 'none';
+                });
+
+                if (id) {
+                    const element = document.getElementById(id);
+                    if (element) {
+                        element.classList.add('selected');
+                        const controls = element.querySelector('.control-buttons');
+                        const handle = element.querySelector('.resize-handle');
+                        if (controls) controls.style.display = 'flex';
+                        if (handle) handle.style.display = 'block';
+                    }
+                }
+            }
+
+            function deselectAll() {
+                selectObject(null);
+            }
+
+            function getObjectById(id) {
+                return state.objects.find(o => o.id === id);
+            }
+
+            // ============================================
+            // Image Handling
+            // ============================================
+
+            function handleImageUpload(event) {
+                const files = event.target.files;
+                if (!files || files.length === 0) return;
+
+                const paperRect = elements.paper.getBoundingClientRect();
+                const paperWidth = paperRect.width;
+                const paperHeight = paperRect.height;
+
+                Array.from(files).forEach((file, index) => {
+                    if (!file.type.match('image.*')) return;
+
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const img = new Image();
+                        img.onload = () => {
+                            const naturalWidth = img.naturalWidth;
+                            const naturalHeight = img.naturalHeight;
+                            const aspectRatio = naturalWidth / naturalHeight;
+
+                            let width, height;
+
+                            // If this is the first image, calculate and store default size
+                            if (!state.defaultImageSize) {
+                                // Calculate size to fit in paper (max 80% of paper dimensions)
+                                const maxWidth = paperWidth * 0.6;
+                                const maxHeight = paperHeight * 0.6;
+
+                                if (naturalWidth > maxWidth || naturalHeight > maxHeight) {
+                                    if (aspectRatio > maxWidth / maxHeight) {
+                                        width = maxWidth;
+                                        height = maxWidth / aspectRatio;
+                                    } else {
+                                        height = maxHeight;
+                                        width = maxHeight * aspectRatio;
+                                    }
+                                } else {
+                                    width = naturalWidth;
+                                    height = naturalHeight;
+                                }
+
+                                state.defaultImageSize = { width, height };
+                            } else {
+                                // Use default size but maintain this image's aspect ratio
+                                const defaultAspect = state.defaultImageSize.width / state.defaultImageSize.height;
+                                if (aspectRatio > defaultAspect) {
+                                    width = state.defaultImageSize.width;
+                                    height = width / aspectRatio;
+                                } else {
+                                    height = state.defaultImageSize.height;
+                                    width = height * aspectRatio;
+                                }
+                            }
+
+                            // Position with slight offset for multiple images
+                            const offset = index * 20;
+                            const x = 50 + offset;
+                            const y = 50 + offset;
+
+                            const imageObj = {
+                                id: generateId(),
+                                type: 'image',
+                                src: e.target.result,
+                                x: x,
+                                y: y,
+                                width: width,
+                                height: height,
+                                rotation: 0,
+                                naturalWidth: naturalWidth,
+                                naturalHeight: naturalHeight
+                            };
+
+                            addObject(imageObj);
+                            selectObject(imageObj.id);
+                        };
+                        img.src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                });
+
+                // Reset input
+                event.target.value = '';
+            }
+
+            // ============================================
+            // Text Certification
+            // ============================================
+
+            function updateCertification() {
+                const existingCert = state.objects.find(o => o.type === 'text');
+
+                if (state.certification.show) {
+                    const paperRect = elements.paper.getBoundingClientRect();
+
+                    if (!existingCert) {
+                        const certObj = {
+                            id: generateId(),
+                            type: 'text',
+                            x: paperRect.width / 2 - 100,
+                            y: paperRect.height - 150,
+                            width: 200,
+                            height: 100,
+                            rotation: 0,
+                            name: state.certification.name,
+                            gap1: state.certification.gap1,
+                            gap2: state.certification.gap2
+                        };
+                        addObject(certObj);
+                    } else {
+                        existingCert.name = state.certification.name;
+                        existingCert.gap1 = state.certification.gap1;
+                        existingCert.gap2 = state.certification.gap2;
+                        updateObjectElement(existingCert);
+                    }
+                } else {
+                    if (existingCert) {
+                        removeObject(existingCert.id);
+                    }
+                }
+            }
+
+            // ============================================
+            // Signature
+            // ============================================
+
+            function addSignature() {
+                const paperRect = elements.paper.getBoundingClientRect();
+
+                const signatureObj = {
+                    id: generateId(),
+                    type: 'signature',
+                    x: paperRect.width / 2 - 75,
+                    y: paperRect.height / 2 - 50,
+                    width: 150,
+                    height: 100,
+                    rotation: 0,
+                    strokes: []
+                };
+
+                addObject(signatureObj);
+                selectObject(signatureObj.id);
+            }
+
+            function clearSignature(id) {
+                const obj = getObjectById(id);
+                if (obj && obj.type === 'signature') {
+                    obj.strokes = [];
+                    updateObjectElement(obj);
+                }
+            }
+
+            // ============================================
+            // Rendering
+            // ============================================
+
+            function renderObject(obj) {
+                const div = document.createElement('div');
+                div.id = obj.id;
+                div.className = 'a4-object';
+                div.style.left = obj.x + 'px';
+                div.style.top = obj.y + 'px';
+                div.style.width = obj.width + 'px';
+                div.style.height = obj.height + 'px';
+                div.style.transform = `rotate(${obj.rotation}deg)`;
+                div.style.zIndex = state.objects.indexOf(obj) + 1;
+
+                if (obj.type === 'image') {
+                    const img = document.createElement('img');
+                    img.src = obj.src;
+                    img.alt = 'Uploaded image';
+                    div.appendChild(img);
+                } else if (obj.type === 'text') {
+                    const textDiv = document.createElement('div');
+                    textDiv.className = 'text-certification';
+                    textDiv.innerHTML = `
+                        <div class="line1">สำเนาถูกต้อง</div>
+                        <div class="line2" style="margin-top: ${obj.gap1}px;">${obj.name}</div>
+                        <div class="line3" style="margin-top: ${obj.gap2}px;">วันที่ ${getThaiDate()}</div>
+                    `;
+                    div.appendChild(textDiv);
+                } else if (obj.type === 'signature') {
+                    const canvas = document.createElement('canvas');
+                    canvas.className = 'signature-canvas';
+                    canvas.width = obj.width * 2; // Higher resolution
+                    canvas.height = obj.height * 2;
+                    canvas.style.width = '100%';
+                    canvas.style.height = '100%';
+                    div.appendChild(canvas);
+                    renderSignatureStrokes(canvas, obj.strokes);
+                }
+
+                // Control buttons
+                const controls = document.createElement('div');
+                controls.className = 'control-buttons';
+                controls.style.display = 'none';
+
+                const rotateBtn = document.createElement('button');
+                rotateBtn.className = 'control-btn';
+                rotateBtn.innerHTML = '<i data-lucide="rotate-cw" class="w-4 h-4"></i>';
+                rotateBtn.setAttribute('aria-label', 'หมุน 90°');
+                rotateBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    rotateObject(obj.id);
+                };
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'control-btn';
+                deleteBtn.innerHTML = '<i data-lucide="trash-2" class="w-4 h-4"></i>';
+                deleteBtn.setAttribute('aria-label', 'ลบวัตถุ');
+                deleteBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    deleteObject(obj.id);
+                };
+
+                controls.appendChild(rotateBtn);
+
+                // Add clear button for signature
+                if (obj.type === 'signature') {
+                    const clearBtn = document.createElement('button');
+                    clearBtn.className = 'control-btn';
+                    clearBtn.innerHTML = '<i data-lucide="eraser" class="w-4 h-4"></i>';
+                    clearBtn.setAttribute('aria-label', 'เคลียร์ลายเซ็น');
+                    clearBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        clearSignature(obj.id);
+                    };
+                    controls.appendChild(clearBtn);
+                }
+
+                controls.appendChild(deleteBtn);
+                div.appendChild(controls);
+
+                // Resize handle
+                const handle = document.createElement('div');
+                handle.className = 'resize-handle';
+                handle.style.display = 'none';
+                div.appendChild(handle);
+
+                // Event listeners
+                div.addEventListener('mousedown', (e) => startDrag(e, obj.id));
+                div.addEventListener('touchstart', (e) => startDrag(e, obj.id), { passive: false });
+
+                handle.addEventListener('mousedown', (e) => startResize(e, obj.id));
+                handle.addEventListener('touchstart', (e) => startResize(e, obj.id), { passive: false });
+
+                // Signature drawing
+                if (obj.type === 'signature') {
+                    const canvas = div.querySelector('canvas');
+                    canvas.addEventListener('mousedown', (e) => startDrawing(e, obj.id));
+                    canvas.addEventListener('touchstart', (e) => startDrawing(e, obj.id), { passive: false });
+                }
+
+                elements.paper.appendChild(div);
+
+                // Initialize Lucide icons
+                if (window.lucide) {
+                    window.lucide.createIcons();
+                }
+            }
+
+            function updateObjectElement(obj) {
+                const element = document.getElementById(obj.id);
+                if (!element) return;
+
+                element.style.left = obj.x + 'px';
+                element.style.top = obj.y + 'px';
+                element.style.width = obj.width + 'px';
+                element.style.height = obj.height + 'px';
+                element.style.transform = `rotate(${obj.rotation}deg)`;
+
+                if (obj.type === 'text') {
+                    const textDiv = element.querySelector('.text-certification');
+                    if (textDiv) {
+                        textDiv.innerHTML = `
+                            <div class="line1">สำเนาถูกต้อง</div>
+                            <div class="line2" style="margin-top: ${obj.gap1}px;">${obj.name}</div>
+                            <div class="line3" style="margin-top: ${obj.gap2}px;">วันที่ ${getThaiDate()}</div>
+                        `;
+                    }
+                } else if (obj.type === 'signature') {
+                    const canvas = element.querySelector('canvas');
+                    if (canvas) {
+                        canvas.width = obj.width * 2;
+                        canvas.height = obj.height * 2;
+                        renderSignatureStrokes(canvas, obj.strokes);
+                    }
+                }
+            }
+
+            function renderSignatureStrokes(canvas, strokes) {
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 2;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+
+                strokes.forEach(stroke => {
+                    if (stroke.length < 2) return;
+                    ctx.beginPath();
+                    ctx.moveTo(stroke[0].x * canvas.width, stroke[0].y * canvas.height);
+                    for (let i = 1; i < stroke.length; i++) {
+                        ctx.lineTo(stroke[i].x * canvas.width, stroke[i].y * canvas.height);
+                    }
+                    ctx.stroke();
+                });
+            }
+
+            // ============================================
+            // Object Manipulation
+            // ============================================
+
+            function rotateObject(id) {
+                const obj = getObjectById(id);
+                if (!obj) return;
+
+                obj.rotation = (obj.rotation + 90) % 360;
+                updateObjectElement(obj);
+            }
+
+            function deleteObject(id) {
+                if (confirm('ต้องการลบวัตถุนี้หรือไม่?')) {
+                    removeObject(id);
+                    deselectAll();
+                }
+            }
+
+            // ============================================
+            // Drag & Drop
+            // ============================================
+
+            function startDrag(event, id) {
+                // Don't start drag if clicking on canvas (for drawing)
+                if (event.target.tagName === 'CANVAS') return;
+                // Don't start drag if clicking on controls
+                if (event.target.closest('.control-buttons') || event.target.closest('.resize-handle')) return;
+
+                event.preventDefault();
+                event.stopPropagation();
+
+                state.isDragging = true;
+                selectObject(id);
+
+                const obj = getObjectById(id);
+                const pos = getRelativePosition(event, elements.paper);
+
+                state.dragOffset = {
+                    x: pos.x - obj.x,
+                    y: pos.y - obj.y
+                };
+
+                document.addEventListener('mousemove', onDrag);
+                document.addEventListener('mouseup', stopDrag);
+                document.addEventListener('touchmove', onDrag, { passive: false });
+                document.addEventListener('touchend', stopDrag);
+            }
+
+            function onDrag(event) {
+                if (!state.isDragging || !state.selectedId) return;
+
+                event.preventDefault();
+
+                const obj = getObjectById(state.selectedId);
+                if (!obj) return;
+
+                const pos = getRelativePosition(event, elements.paper);
+                const paperRect = elements.paper.getBoundingClientRect();
+
+                obj.x = clamp(pos.x - state.dragOffset.x, 0, paperRect.width - obj.width);
+                obj.y = clamp(pos.y - state.dragOffset.y, 0, paperRect.height - obj.height);
+
+                updateObjectElement(obj);
+            }
+
+            function stopDrag() {
+                state.isDragging = false;
+                document.removeEventListener('mousemove', onDrag);
+                document.removeEventListener('mouseup', stopDrag);
+                document.removeEventListener('touchmove', onDrag);
+                document.removeEventListener('touchend', stopDrag);
+            }
+
+            // ============================================
+            // Resize
+            // ============================================
+
+            function startResize(event, id) {
+                event.preventDefault();
+                event.stopPropagation();
+
+                state.isResizing = true;
+                selectObject(id);
+
+                const obj = getObjectById(id);
+                const pos = getRelativePosition(event, elements.paper);
+
+                state.resizeStart = {
+                    x: pos.x,
+                    y: pos.y,
+                    width: obj.width,
+                    height: obj.height
+                };
+
+                document.addEventListener('mousemove', onResize);
+                document.addEventListener('mouseup', stopResize);
+                document.addEventListener('touchmove', onResize, { passive: false });
+                document.addEventListener('touchend', stopResize);
+            }
+
+            function onResize(event) {
+                if (!state.isResizing || !state.selectedId) return;
+
+                event.preventDefault();
+
+                const obj = getObjectById(state.selectedId);
+                if (!obj) return;
+
+                const pos = getRelativePosition(event, elements.paper);
+                const paperRect = elements.paper.getBoundingClientRect();
+
+                const deltaX = pos.x - state.resizeStart.x;
+                const deltaY = pos.y - state.resizeStart.y;
+
+                if (obj.type === 'image' || obj.type === 'signature') {
+                    // Maintain aspect ratio
+                    const aspectRatio = state.resizeStart.width / state.resizeStart.height;
+                    const newWidth = state.resizeStart.width + deltaX;
+                    const newHeight = newWidth / aspectRatio;
+
+                    obj.width = clamp(newWidth, 50, paperRect.width - obj.x);
+                    obj.height = clamp(newHeight, 50, paperRect.height - obj.y);
+                } else {
+                    // Text can resize freely
+                    obj.width = clamp(state.resizeStart.width + deltaX, 100, paperRect.width - obj.x);
+                    obj.height = clamp(state.resizeStart.height + deltaY, 50, paperRect.height - obj.y);
+                }
+
+                updateObjectElement(obj);
+            }
+
+            function stopResize() {
+                state.isResizing = false;
+                document.removeEventListener('mousemove', onResize);
+                document.removeEventListener('mouseup', stopResize);
+                document.removeEventListener('touchmove', onResize);
+                document.removeEventListener('touchend', stopResize);
+            }
+
+            // ============================================
+            // Drawing (Signature)
+            // ============================================
+
+            function startDrawing(event, id) {
+                event.preventDefault();
+                event.stopPropagation();
+
+                const obj = getObjectById(id);
+                if (!obj || obj.type !== 'signature') return;
+
+                state.isDrawing = true;
+                const canvas = document.getElementById(id).querySelector('canvas');
+                const rect = canvas.getBoundingClientRect();
+
+                const clientX = event.clientX || (event.touches && event.touches[0].clientX);
+                const clientY = event.clientY || (event.touches && event.touches[0].clientY);
+
+                const x = (clientX - rect.left) / rect.width;
+                const y = (clientY - rect.top) / rect.height;
+
+                obj.strokes.push([{ x, y }]);
+
+                const onMove = (e) => {
+                    if (!state.isDrawing) return;
+                    e.preventDefault();
+
+                    const moveX = e.clientX || (e.touches && e.touches[0].clientX);
+                    const moveY = e.clientY || (e.touches && e.touches[0].clientY);
+
+                    const nx = (moveX - rect.left) / rect.width;
+                    const ny = (moveY - rect.top) / rect.height;
+
+                    const currentStroke = obj.strokes[obj.strokes.length - 1];
+                    currentStroke.push({ x: nx, y: ny });
+
+                    renderSignatureStrokes(canvas, obj.strokes);
+                };
+
+                const onEnd = () => {
+                    state.isDrawing = false;
+                    document.removeEventListener('mousemove', onMove);
+                    document.removeEventListener('mouseup', onEnd);
+                    document.removeEventListener('touchmove', onMove);
+                    document.removeEventListener('touchend', onEnd);
+                };
+
+                document.addEventListener('mousemove', onMove);
+                document.addEventListener('mouseup', onEnd);
+                document.addEventListener('touchmove', onMove, { passive: false });
+                document.addEventListener('touchend', onEnd);
+            }
+
+            // ============================================
+            // Export (Download)
+            // ============================================
+
+            async function exportToPDF() {
+                showLoading();
+
+                // Hide all controls
+                document.querySelectorAll('.control-buttons, .resize-handle').forEach(el => {
+                    el.style.display = 'none';
+                });
+                document.querySelectorAll('.a4-object').forEach(el => {
+                    el.classList.remove('selected');
+                });
+
+                try {
+                    const canvas = await html2canvas(elements.paper, {
+                        scale: 3,
+                        useCORS: true,
+                        backgroundColor: '#ffffff',
+                        logging: false
+                    });
+
+                    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+
+                    const { jsPDF } = window.jspdf;
+                    const pdf = new jsPDF({
+                        orientation: 'portrait',
+                        unit: 'mm',
+                        format: 'a4'
+                    });
+
+                    const pdfWidth = 210; // A4 width in mm
+                    const pdfHeight = 297; // A4 height in mm
+
+                    pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+                    pdf.save(`A4-Layout-${Date.now()}.pdf`);
+
+                } catch (error) {
+                    console.error('Export to PDF failed:', error);
+                    alert('เกิดข้อผิดพลาดในการสร้าง PDF');
+                } finally {
+                    hideLoading();
+                    // Restore selection if any
+                    if (state.selectedId) {
+                        selectObject(state.selectedId);
+                    }
+                }
+            }
+
+            async function exportToJPG() {
+                showLoading();
+
+                // Hide all controls
+                document.querySelectorAll('.control-buttons, .resize-handle').forEach(el => {
+                    el.style.display = 'none';
+                });
+                document.querySelectorAll('.a4-object').forEach(el => {
+                    el.classList.remove('selected');
+                });
+
+                try {
+                    const canvas = await html2canvas(elements.paper, {
+                        scale: 3,
+                        useCORS: true,
+                        backgroundColor: '#ffffff',
+                        logging: false
+                    });
+
+                    canvas.toBlob((blob) => {
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `A4-Layout-${Date.now()}.jpg`;
+                        a.click();
+                        URL.revokeObjectURL(url);
+
+                        hideLoading();
+                        // Restore selection if any
+                        if (state.selectedId) {
+                            selectObject(state.selectedId);
+                        }
+                    }, 'image/jpeg', 0.95);
+
+                } catch (error) {
+                    console.error('Export to JPG failed:', error);
+                    alert('เกิดข้อผิดพลาดในการสร้าง JPG');
+                    hideLoading();
+                    if (state.selectedId) {
+                        selectObject(state.selectedId);
+                    }
+                }
+            }
+
+            // ============================================
+            // Event Listeners
+            // ============================================
+
+            elements.imageUpload.addEventListener('change', handleImageUpload);
+
+            elements.showCertification.addEventListener('change', (e) => {
+                state.certification.show = e.target.checked;
+                elements.certificationControls.classList.toggle('hidden', !e.target.checked);
+                updateCertification();
+            });
+
+            elements.certifierName.addEventListener('input', (e) => {
+                state.certification.name = e.target.value;
+                updateCertification();
+            });
+
+            elements.gap1Slider.addEventListener('input', (e) => {
+                state.certification.gap1 = parseInt(e.target.value);
+                elements.gap1Value.textContent = state.certification.gap1;
+                updateCertification();
+            });
+
+            elements.gap2Slider.addEventListener('input', (e) => {
+                state.certification.gap2 = parseInt(e.target.value);
+                elements.gap2Value.textContent = state.certification.gap2;
+                updateCertification();
+            });
+
+            elements.addSignatureBtn.addEventListener('click', addSignature);
+
+            elements.downloadBtn.addEventListener('click', () => {
+                const format = elements.exportFormat.value;
+                if (format === 'pdf') {
+                    exportToPDF();
+                } else if (format === 'jpg') {
+                    exportToJPG();
+                }
+            });
+
+            elements.instructionsToggle.addEventListener('click', () => {
+                const isHidden = elements.instructionsContent.classList.contains('hidden');
+                elements.instructionsContent.classList.toggle('hidden', !isHidden);
+                elements.instructionsIcon.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+            });
+
+            // Deselect when clicking on paper background
+            elements.paper.addEventListener('mousedown', (e) => {
+                if (e.target === elements.paper) {
+                    deselectAll();
+                }
+            });
+
+            elements.paper.addEventListener('touchstart', (e) => {
+                if (e.target === elements.paper) {
+                    deselectAll();
+                }
+            }, { passive: true });
+
+            // Prevent default scroll behavior during touch interactions
+            document.body.addEventListener('touchmove', (e) => {
+                if (state.isDragging || state.isResizing || state.isDrawing) {
+                    e.preventDefault();
+                }
+            }, { passive: false });
+
+            // ============================================
+            // Responsive: Adjust sidebar height on mobile
+            // ============================================
+
+            function adjustLayout() {
+                const sidebar = document.getElementById('sidebar');
+                if (window.innerWidth < 768) {
+                    sidebar.style.maxHeight = '50vh';
+                } else {
+                    sidebar.style.maxHeight = '100vh';
+                }
+            }
+
+            window.addEventListener('resize', adjustLayout);
+            adjustLayout();
+
+            // ============================================
+            // Initialize Lucide Icons
+            // ============================================
+
+            if (window.lucide) {
+                window.lucide.createIcons();
+            }
+
+            // ============================================
+            // Ready
+            // ============================================
+
+            console.log('A4 Image Layout Application initialized successfully.');
+
+        })();
+    </script>
+</body>
+</html>
