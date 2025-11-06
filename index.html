@@ -120,12 +120,42 @@
         }
 
         /* Grid Frame Layouts */
+        .frame-drag-handle {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 32px;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.9) 0%, rgba(118, 75, 162, 0.9) 100%);
+            border-radius: 8px 8px 0 0;
+            cursor: move;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+            z-index: 5;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .a4-object:hover .frame-drag-handle,
+        .a4-object.selected .frame-drag-handle {
+            opacity: 1;
+        }
+
+        .frame-drag-handle i {
+            margin-right: 4px;
+        }
+
         .frame-grid {
             display: grid;
             gap: 8px;
             width: 100%;
             height: 100%;
             padding: 8px;
+            padding-top: 40px;
         }
 
         .frame-grid-1 {
@@ -664,6 +694,101 @@
     <!-- Hidden file input for grid cell uploads -->
     <input type="file" id="gridCellFileInput" accept="image/*" style="display: none;" />
 
+    <!-- Hidden file input for custom font uploads -->
+    <input type="file" id="customFontInput" accept=".ttf,.otf,.woff,.woff2" style="display: none;" />
+
+    <!-- Text Editor Modal -->
+    <div class="modal" id="textEditorModal">
+        <div class="modal-content" style="max-width: 600px;">
+            <button class="modal-close" id="closeTextEditorModal" aria-label="ปิด">
+                <i data-lucide="x" class="w-6 h-6 text-slate-600"></i>
+            </button>
+            <h2 class="text-2xl font-bold text-slate-800 mb-4 text-center">แก้ไขข้อความ</h2>
+
+            <div class="space-y-4">
+                <!-- Text Input -->
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">ข้อความ</label>
+                    <textarea
+                        id="textEditorContent"
+                        rows="4"
+                        placeholder="พิมพ์ข้อความที่นี่..."
+                        class="w-full px-3 py-2 border-2 border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
+                    ></textarea>
+                </div>
+
+                <!-- Font Controls -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">ฟอนต์</label>
+                        <select id="textEditorFontFamily" class="w-full px-3 py-2 border-2 border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+                            <option value="Sarabun">Sarabun</option>
+                            <option value="Arial">Arial</option>
+                            <option value="Times New Roman">Times New Roman</option>
+                            <option value="Courier New">Courier New</option>
+                            <option value="Georgia">Georgia</option>
+                            <option value="Verdana">Verdana</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">ขนาด</label>
+                        <input type="number" id="textEditorFontSize" value="16" min="8" max="200" class="w-full px-3 py-2 border-2 border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+                    </div>
+                </div>
+
+                <!-- Upload Custom Font -->
+                <div>
+                    <button id="uploadCustomFontBtn" class="w-full px-3 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition text-sm font-semibold flex items-center justify-center gap-2">
+                        <i data-lucide="upload" class="w-4 h-4"></i>
+                        อัปโหลดฟอนต์จากเครื่อง (.ttf, .otf, .woff)
+                    </button>
+                </div>
+
+                <!-- Formatting Buttons -->
+                <div class="flex items-center gap-2">
+                    <button id="textEditorBold" class="px-3 py-2 bg-slate-200 rounded-lg hover:bg-purple-500 hover:text-white transition text-sm font-bold" data-active="false">
+                        B
+                    </button>
+                    <button id="textEditorItalic" class="px-3 py-2 bg-slate-200 rounded-lg hover:bg-purple-500 hover:text-white transition text-sm italic" data-active="false">
+                        I
+                    </button>
+                    <button id="textEditorUnderline" class="px-3 py-2 bg-slate-200 rounded-lg hover:bg-purple-500 hover:text-white transition text-sm underline" data-active="false">
+                        U
+                    </button>
+                    <div class="flex-1"></div>
+                    <label class="text-sm font-semibold text-slate-700">สี:</label>
+                    <input type="color" id="textEditorColor" value="#000000" class="w-12 h-8 rounded cursor-pointer">
+                </div>
+
+                <!-- Text Align -->
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">จัดตำแหน่ง</label>
+                    <div class="flex gap-2">
+                        <button id="textEditorAlignLeft" class="flex-1 px-3 py-2 bg-slate-200 rounded-lg hover:bg-purple-500 hover:text-white transition text-sm" data-align="left">
+                            <i data-lucide="align-left" class="w-4 h-4 mx-auto"></i>
+                        </button>
+                        <button id="textEditorAlignCenter" class="flex-1 px-3 py-2 bg-slate-200 rounded-lg hover:bg-purple-500 hover:text-white transition text-sm" data-align="center">
+                            <i data-lucide="align-center" class="w-4 h-4 mx-auto"></i>
+                        </button>
+                        <button id="textEditorAlignRight" class="flex-1 px-3 py-2 bg-slate-200 rounded-lg hover:bg-purple-500 hover:text-white transition text-sm" data-align="right">
+                            <i data-lucide="align-right" class="w-4 h-4 mx-auto"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Save Button -->
+                <div class="flex gap-3 mt-6">
+                    <button id="cancelTextEditor" class="flex-1 px-6 py-3 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition font-semibold">
+                        ยกเลิก
+                    </button>
+                    <button id="saveTextEditor" class="flex-1 px-6 py-3 gradient-btn text-white rounded-lg font-semibold">
+                        บันทึก
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Main Container -->
     <div class="flex flex-col md:flex-row h-screen">
         <!-- Sidebar -->
@@ -741,7 +866,76 @@
                         <i data-lucide="plus-square" class="w-4 h-4"></i>
                         เพิ่มเฟรมรูปภาพ
                     </button>
-                    <p class="text-xs text-slate-500 mt-2">ลากรูปมาวางในเฟรมได้</p>
+                    <p class="text-xs text-slate-500 mt-2">ลากรูปมาวางในเฟรมได้ หรือคลิกที่ช่องเพื่ออัปโหลด</p>
+                </div>
+
+                <!-- Batch Resize -->
+                <div class="sidebar-section fade-in">
+                    <div class="section-header">
+                        <i data-lucide="maximize-2" class="w-5 h-5"></i>
+                        <span>ปรับขนาดภาพรวม</span>
+                    </div>
+                    <div class="space-y-3">
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">ความกว้าง (px)</label>
+                                <input
+                                    type="number"
+                                    id="batchWidth"
+                                    placeholder="400"
+                                    min="50"
+                                    max="2000"
+                                    class="w-full px-3 py-2 border-2 border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                >
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">ความสูง (px)</label>
+                                <input
+                                    type="number"
+                                    id="batchHeight"
+                                    placeholder="300"
+                                    min="50"
+                                    max="2000"
+                                    class="w-full px-3 py-2 border-2 border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                >
+                            </div>
+                        </div>
+                        <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+                            <input type="checkbox" id="batchKeepRatio" checked class="cursor-pointer">
+                            <span>คงสัดส่วนภาพ</span>
+                        </label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button
+                                id="batchResizeSelected"
+                                class="px-3 py-2 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-lg hover:from-purple-600 hover:to-indigo-700 transition-all text-xs font-semibold shadow-md hover:shadow-lg"
+                            >
+                                ปรับที่เลือก
+                            </button>
+                            <button
+                                id="batchResizeAll"
+                                class="px-3 py-2 bg-gradient-to-r from-pink-500 to-rose-600 text-white rounded-lg hover:from-pink-600 hover:to-rose-700 transition-all text-xs font-semibold shadow-md hover:shadow-lg"
+                            >
+                                ปรับทั้งหมด
+                            </button>
+                        </div>
+                        <p class="text-xs text-slate-500">เลือกภาพโดยคลิกที่ภาพ จากนั้นกดปุ่มปรับขนาด</p>
+                    </div>
+                </div>
+
+                <!-- Text Box -->
+                <div class="sidebar-section fade-in">
+                    <div class="section-header">
+                        <i data-lucide="type" class="w-5 h-5"></i>
+                        <span>เพิ่มข้อความ</span>
+                    </div>
+                    <button
+                        id="addTextBoxBtn"
+                        class="w-full px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-lg hover:from-emerald-600 hover:to-teal-700 transition-all text-sm font-semibold shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+                    >
+                        <i data-lucide="plus" class="w-4 h-4"></i>
+                        เพิ่มกล่องข้อความ
+                    </button>
+                    <p class="text-xs text-slate-500 mt-2">คลิกเพื่อเพิ่มข้อความที่สามารถแต่งได้</p>
                 </div>
 
                 <!-- Text Certification -->
@@ -920,7 +1114,9 @@
                     gap1: 15,
                     gap2: 8,
                     signatureStrokes: []
-                }
+                },
+                currentTextId: null, // For text editor
+                customFonts: [] // Loaded custom fonts
             };
 
             // ============================================
@@ -953,7 +1149,29 @@
                 closeSignatureModal: document.getElementById('closeSignatureModal'),
                 clearModalSignature: document.getElementById('clearModalSignature'),
                 saveModalSignature: document.getElementById('saveModalSignature'),
-                gridCellFileInput: document.getElementById('gridCellFileInput')
+                gridCellFileInput: document.getElementById('gridCellFileInput'),
+                batchWidth: document.getElementById('batchWidth'),
+                batchHeight: document.getElementById('batchHeight'),
+                batchKeepRatio: document.getElementById('batchKeepRatio'),
+                batchResizeSelected: document.getElementById('batchResizeSelected'),
+                batchResizeAll: document.getElementById('batchResizeAll'),
+                addTextBoxBtn: document.getElementById('addTextBoxBtn'),
+                textEditorModal: document.getElementById('textEditorModal'),
+                closeTextEditorModal: document.getElementById('closeTextEditorModal'),
+                textEditorContent: document.getElementById('textEditorContent'),
+                textEditorFontFamily: document.getElementById('textEditorFontFamily'),
+                textEditorFontSize: document.getElementById('textEditorFontSize'),
+                textEditorBold: document.getElementById('textEditorBold'),
+                textEditorItalic: document.getElementById('textEditorItalic'),
+                textEditorUnderline: document.getElementById('textEditorUnderline'),
+                textEditorColor: document.getElementById('textEditorColor'),
+                textEditorAlignLeft: document.getElementById('textEditorAlignLeft'),
+                textEditorAlignCenter: document.getElementById('textEditorAlignCenter'),
+                textEditorAlignRight: document.getElementById('textEditorAlignRight'),
+                saveTextEditor: document.getElementById('saveTextEditor'),
+                cancelTextEditor: document.getElementById('cancelTextEditor'),
+                uploadCustomFontBtn: document.getElementById('uploadCustomFontBtn'),
+                customFontInput: document.getElementById('customFontInput')
             };
 
             // ============================================
@@ -1188,6 +1406,222 @@
             }
 
             // ============================================
+            // Batch Resize Functions
+            // ============================================
+
+            function batchResizeImages(targetIds) {
+                const width = parseFloat(elements.batchWidth.value);
+                const height = parseFloat(elements.batchHeight.value);
+                const keepRatio = elements.batchKeepRatio.checked;
+
+                if (!width && !height) {
+                    alert('กรุณากรอกความกว้างหรือความสูง');
+                    return;
+                }
+
+                let resizeCount = 0;
+
+                targetIds.forEach(id => {
+                    const obj = getObjectById(id);
+                    if (!obj || (obj.type !== 'image' && obj.type !== 'frame')) return;
+
+                    let newWidth = width || obj.width;
+                    let newHeight = height || obj.height;
+
+                    if (keepRatio) {
+                        const aspectRatio = obj.width / obj.height;
+                        if (width && !height) {
+                            newWidth = width;
+                            newHeight = width / aspectRatio;
+                        } else if (height && !width) {
+                            newHeight = height;
+                            newWidth = height * aspectRatio;
+                        } else {
+                            // Both specified, use width and calculate height
+                            newWidth = width;
+                            newHeight = width / aspectRatio;
+                        }
+                    }
+
+                    obj.width = newWidth;
+                    obj.height = newHeight;
+                    updateObjectElement(obj);
+                    resizeCount++;
+                });
+
+                if (resizeCount > 0) {
+                    alert(`ปรับขนาดสำเร็จ ${resizeCount} รายการ`);
+                }
+            }
+
+            function batchResizeSelected() {
+                if (!state.selectedId) {
+                    alert('กรุณาเลือกภาพก่อน');
+                    return;
+                }
+                batchResizeImages([state.selectedId]);
+            }
+
+            function batchResizeAllImages() {
+                const imageIds = state.objects
+                    .filter(obj => obj.type === 'image' || obj.type === 'frame')
+                    .map(obj => obj.id);
+
+                if (imageIds.length === 0) {
+                    alert('ไม่มีภาพในเอกสาร');
+                    return;
+                }
+
+                batchResizeImages(imageIds);
+            }
+
+            // ============================================
+            // Text Box Functions
+            // ============================================
+
+            function openTextEditor(textId = null) {
+                state.currentTextId = textId;
+
+                if (textId) {
+                    // Edit existing textbox
+                    const obj = getObjectById(textId);
+                    if (obj && obj.type === 'textbox') {
+                        elements.textEditorContent.value = obj.content;
+                        elements.textEditorFontFamily.value = obj.fontFamily;
+                        elements.textEditorFontSize.value = obj.fontSize;
+                        elements.textEditorColor.value = obj.color;
+
+                        // Set formatting buttons
+                        elements.textEditorBold.dataset.active = obj.bold ? 'true' : 'false';
+                        elements.textEditorItalic.dataset.active = obj.italic ? 'true' : 'false';
+                        elements.textEditorUnderline.dataset.active = obj.underline ? 'true' : 'false';
+
+                        updateFormattingButtons();
+                    }
+                } else {
+                    // New textbox - reset form
+                    elements.textEditorContent.value = 'ข้อความใหม่';
+                    elements.textEditorFontFamily.value = 'Sarabun';
+                    elements.textEditorFontSize.value = '16';
+                    elements.textEditorColor.value = '#000000';
+                    elements.textEditorBold.dataset.active = 'false';
+                    elements.textEditorItalic.dataset.active = 'false';
+                    elements.textEditorUnderline.dataset.active = 'false';
+                    updateFormattingButtons();
+                }
+
+                elements.textEditorModal.classList.add('active');
+            }
+
+            function closeTextEditor() {
+                elements.textEditorModal.classList.remove('active');
+                state.currentTextId = null;
+            }
+
+            function saveTextBox() {
+                const content = elements.textEditorContent.value.trim();
+                if (!content) {
+                    alert('กรุณากรอกข้อความ');
+                    return;
+                }
+
+                const textData = {
+                    content: content,
+                    fontFamily: elements.textEditorFontFamily.value,
+                    fontSize: parseInt(elements.textEditorFontSize.value),
+                    color: elements.textEditorColor.value,
+                    bold: elements.textEditorBold.dataset.active === 'true',
+                    italic: elements.textEditorItalic.dataset.active === 'true',
+                    underline: elements.textEditorUnderline.dataset.active === 'true',
+                    align: getActiveTextAlign()
+                };
+
+                if (state.currentTextId) {
+                    // Update existing textbox
+                    const obj = getObjectById(state.currentTextId);
+                    if (obj && obj.type === 'textbox') {
+                        Object.assign(obj, textData);
+                        updateObjectElement(obj);
+                    }
+                } else {
+                    // Create new textbox
+                    const paperRect = elements.paper.getBoundingClientRect();
+                    const textObj = {
+                        id: generateId(),
+                        type: 'textbox',
+                        x: paperRect.width / 2 - 150,
+                        y: paperRect.height / 2 - 50,
+                        width: 300,
+                        height: 100,
+                        rotation: 0,
+                        ...textData
+                    };
+
+                    addObject(textObj);
+                    selectObject(textObj.id);
+                }
+
+                closeTextEditor();
+            }
+
+            function updateFormattingButtons() {
+                const boldActive = elements.textEditorBold.dataset.active === 'true';
+                const italicActive = elements.textEditorItalic.dataset.active === 'true';
+                const underlineActive = elements.textEditorUnderline.dataset.active === 'true';
+
+                elements.textEditorBold.style.background = boldActive ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : '#e2e8f0';
+                elements.textEditorBold.style.color = boldActive ? 'white' : '#475569';
+
+                elements.textEditorItalic.style.background = italicActive ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : '#e2e8f0';
+                elements.textEditorItalic.style.color = italicActive ? 'white' : '#475569';
+
+                elements.textEditorUnderline.style.background = underlineActive ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : '#e2e8f0';
+                elements.textEditorUnderline.style.color = underlineActive ? 'white' : '#475569';
+            }
+
+            function getActiveTextAlign() {
+                if (elements.textEditorAlignLeft.dataset.active === 'true') return 'left';
+                if (elements.textEditorAlignCenter.dataset.active === 'true') return 'center';
+                if (elements.textEditorAlignRight.dataset.active === 'true') return 'right';
+                return 'left';
+            }
+
+            function handleCustomFontUpload(file) {
+                if (!file) return;
+
+                const fontName = file.name.replace(/\.(ttf|otf|woff|woff2)$/i, '');
+                const reader = new FileReader();
+
+                reader.onload = (e) => {
+                    const fontData = e.target.result;
+                    const fontFace = new FontFace(fontName, `url(${fontData})`);
+
+                    fontFace.load().then((loadedFont) => {
+                        document.fonts.add(loadedFont);
+
+                        // Add to custom fonts list
+                        if (!state.customFonts.includes(fontName)) {
+                            state.customFonts.push(fontName);
+
+                            // Add to font selector
+                            const option = document.createElement('option');
+                            option.value = fontName;
+                            option.textContent = fontName;
+                            elements.textEditorFontFamily.appendChild(option);
+                            elements.textEditorFontFamily.value = fontName;
+                        }
+
+                        alert(`โหลดฟอนต์ "${fontName}" สำเร็จ!`);
+                    }).catch((error) => {
+                        console.error('Font loading failed:', error);
+                        alert('โหลดฟอนต์ล้มเหลว กรุณาลองใหม่');
+                    });
+                };
+
+                reader.readAsDataURL(file);
+            }
+
+            // ============================================
             // Text Certification
             // ============================================
 
@@ -1354,6 +1788,8 @@
                     renderFrame(div, obj);
                 } else if (obj.type === 'text') {
                     renderCertificationText(div, obj);
+                } else if (obj.type === 'textbox') {
+                    renderTextBox(div, obj);
                 }
 
                 // Control buttons
@@ -1407,6 +1843,12 @@
             }
 
             function renderFrame(container, obj) {
+                // Add drag handle
+                const dragHandle = document.createElement('div');
+                dragHandle.className = 'frame-drag-handle';
+                dragHandle.innerHTML = '<i data-lucide="grip-vertical" class="w-4 h-4"></i>ลากเพื่อย้าย';
+                container.appendChild(dragHandle);
+
                 const gridDiv = document.createElement('div');
                 gridDiv.className = `frame-grid frame-grid-${obj.frameType}`;
 
@@ -1521,6 +1963,32 @@
                 container.appendChild(textDiv);
             }
 
+            function renderTextBox(container, obj) {
+                const textDiv = document.createElement('div');
+                textDiv.style.width = '100%';
+                textDiv.style.height = '100%';
+                textDiv.style.padding = '8px';
+                textDiv.style.overflow = 'auto';
+                textDiv.style.wordWrap = 'break-word';
+                textDiv.style.fontFamily = obj.fontFamily;
+                textDiv.style.fontSize = obj.fontSize + 'px';
+                textDiv.style.color = obj.color;
+                textDiv.style.fontWeight = obj.bold ? 'bold' : 'normal';
+                textDiv.style.fontStyle = obj.italic ? 'italic' : 'normal';
+                textDiv.style.textDecoration = obj.underline ? 'underline' : 'none';
+                textDiv.style.textAlign = obj.align;
+                textDiv.style.whiteSpace = 'pre-wrap';
+                textDiv.textContent = obj.content;
+
+                // Double-click to edit
+                textDiv.addEventListener('dblclick', (e) => {
+                    e.stopPropagation();
+                    openTextEditor(obj.id);
+                });
+
+                container.appendChild(textDiv);
+            }
+
             function updateObjectElement(obj) {
                 const element = document.getElementById(obj.id);
                 if (!element) return;
@@ -1588,6 +2056,13 @@
                         line3.textContent = `วันที่ ${getThaiDate()}`;
                         textDiv.appendChild(line3);
                     }
+                } else if (obj.type === 'textbox') {
+                    // Re-render textbox
+                    const oldTextDiv = element.querySelector('div');
+                    if (oldTextDiv) {
+                        oldTextDiv.remove();
+                    }
+                    renderTextBox(element, obj);
                 }
             }
 
@@ -1690,7 +2165,12 @@
             function startDrag(event, id) {
                 if (event.target.tagName === 'CANVAS') return;
                 if (event.target.closest('.control-buttons') || event.target.closest('.resize-handle')) return;
-                if (event.target.closest('.grid-cell')) return; // Don't drag when clicking grid cells
+
+                // Allow drag from drag handle, prevent drag from grid cells
+                const isDragHandle = event.target.closest('.frame-drag-handle');
+                const isGridCell = event.target.closest('.grid-cell');
+
+                if (isGridCell && !isDragHandle) return; // Don't drag when clicking grid cells
 
                 event.preventDefault();
                 event.stopPropagation();
@@ -1910,6 +2390,65 @@
 
             elements.imageUpload.addEventListener('change', handleImageUpload);
             elements.addImageFrameBtn.addEventListener('click', addImageFrame);
+
+            // Batch resize handlers
+            elements.batchResizeSelected.addEventListener('click', batchResizeSelected);
+            elements.batchResizeAll.addEventListener('click', batchResizeAllImages);
+
+            // Text box handlers
+            elements.addTextBoxBtn.addEventListener('click', () => openTextEditor());
+            elements.closeTextEditorModal.addEventListener('click', closeTextEditor);
+            elements.cancelTextEditor.addEventListener('click', closeTextEditor);
+            elements.saveTextEditor.addEventListener('click', saveTextBox);
+
+            // Text editor formatting buttons
+            elements.textEditorBold.addEventListener('click', () => {
+                const isActive = elements.textEditorBold.dataset.active === 'true';
+                elements.textEditorBold.dataset.active = isActive ? 'false' : 'true';
+                updateFormattingButtons();
+            });
+
+            elements.textEditorItalic.addEventListener('click', () => {
+                const isActive = elements.textEditorItalic.dataset.active === 'true';
+                elements.textEditorItalic.dataset.active = isActive ? 'false' : 'true';
+                updateFormattingButtons();
+            });
+
+            elements.textEditorUnderline.addEventListener('click', () => {
+                const isActive = elements.textEditorUnderline.dataset.active === 'true';
+                elements.textEditorUnderline.dataset.active = isActive ? 'false' : 'true';
+                updateFormattingButtons();
+            });
+
+            // Text align buttons
+            [elements.textEditorAlignLeft, elements.textEditorAlignCenter, elements.textEditorAlignRight].forEach(btn => {
+                btn.addEventListener('click', () => {
+                    [elements.textEditorAlignLeft, elements.textEditorAlignCenter, elements.textEditorAlignRight].forEach(b => {
+                        b.dataset.active = 'false';
+                        b.style.background = '#e2e8f0';
+                        b.style.color = '#475569';
+                    });
+                    btn.dataset.active = 'true';
+                    btn.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+                    btn.style.color = 'white';
+                });
+            });
+
+            // Initialize default align
+            elements.textEditorAlignLeft.dataset.active = 'true';
+
+            // Custom font upload
+            elements.uploadCustomFontBtn.addEventListener('click', () => {
+                elements.customFontInput.click();
+            });
+
+            elements.customFontInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    handleCustomFontUpload(file);
+                }
+                e.target.value = '';
+            });
 
             // Grid cell file input handler
             elements.gridCellFileInput.addEventListener('change', (e) => {
