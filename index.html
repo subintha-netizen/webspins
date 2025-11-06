@@ -22,6 +22,13 @@
     <!-- jsPDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
+    <!-- Quill.js Rich Text Editor -->
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+
+    <!-- dom-to-image -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dom-to-image/2.6.0/dom-to-image.min.js"></script>
+
     <style>
         * {
             font-family: 'Sarabun', 'Inter', sans-serif;
@@ -706,34 +713,10 @@
             <h2 class="text-2xl font-bold text-slate-800 mb-4 text-center">แก้ไขข้อความ</h2>
 
             <div class="space-y-4">
-                <!-- Text Input -->
+                <!-- Quill Rich Text Editor -->
                 <div>
-                    <label class="block text-sm font-semibold text-slate-700 mb-2">ข้อความ</label>
-                    <textarea
-                        id="textEditorContent"
-                        rows="4"
-                        placeholder="พิมพ์ข้อความที่นี่..."
-                        class="w-full px-3 py-2 border-2 border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
-                    ></textarea>
-                </div>
-
-                <!-- Font Controls -->
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-sm font-semibold text-slate-700 mb-2">ฟอนต์</label>
-                        <select id="textEditorFontFamily" class="w-full px-3 py-2 border-2 border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
-                            <option value="Sarabun">Sarabun</option>
-                            <option value="Arial">Arial</option>
-                            <option value="Times New Roman">Times New Roman</option>
-                            <option value="Courier New">Courier New</option>
-                            <option value="Georgia">Georgia</option>
-                            <option value="Verdana">Verdana</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-semibold text-slate-700 mb-2">ขนาด</label>
-                        <input type="number" id="textEditorFontSize" value="16" min="8" max="200" class="w-full px-3 py-2 border-2 border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
-                    </div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">ข้อความ (รองรับ Rich Text)</label>
+                    <div id="quillEditor" style="height: 200px; background: white;"></div>
                 </div>
 
                 <!-- Upload Custom Font -->
@@ -742,38 +725,7 @@
                         <i data-lucide="upload" class="w-4 h-4"></i>
                         อัปโหลดฟอนต์จากเครื่อง (.ttf, .otf, .woff)
                     </button>
-                </div>
-
-                <!-- Formatting Buttons -->
-                <div class="flex items-center gap-2">
-                    <button id="textEditorBold" class="px-3 py-2 bg-slate-200 rounded-lg hover:bg-purple-500 hover:text-white transition text-sm font-bold" data-active="false">
-                        B
-                    </button>
-                    <button id="textEditorItalic" class="px-3 py-2 bg-slate-200 rounded-lg hover:bg-purple-500 hover:text-white transition text-sm italic" data-active="false">
-                        I
-                    </button>
-                    <button id="textEditorUnderline" class="px-3 py-2 bg-slate-200 rounded-lg hover:bg-purple-500 hover:text-white transition text-sm underline" data-active="false">
-                        U
-                    </button>
-                    <div class="flex-1"></div>
-                    <label class="text-sm font-semibold text-slate-700">สี:</label>
-                    <input type="color" id="textEditorColor" value="#000000" class="w-12 h-8 rounded cursor-pointer">
-                </div>
-
-                <!-- Text Align -->
-                <div>
-                    <label class="block text-sm font-semibold text-slate-700 mb-2">จัดตำแหน่ง</label>
-                    <div class="flex gap-2">
-                        <button id="textEditorAlignLeft" class="flex-1 px-3 py-2 bg-slate-200 rounded-lg hover:bg-purple-500 hover:text-white transition text-sm" data-align="left">
-                            <i data-lucide="align-left" class="w-4 h-4 mx-auto"></i>
-                        </button>
-                        <button id="textEditorAlignCenter" class="flex-1 px-3 py-2 bg-slate-200 rounded-lg hover:bg-purple-500 hover:text-white transition text-sm" data-align="center">
-                            <i data-lucide="align-center" class="w-4 h-4 mx-auto"></i>
-                        </button>
-                        <button id="textEditorAlignRight" class="flex-1 px-3 py-2 bg-slate-200 rounded-lg hover:bg-purple-500 hover:text-white transition text-sm" data-align="right">
-                            <i data-lucide="align-right" class="w-4 h-4 mx-auto"></i>
-                        </button>
-                    </div>
+                    <p class="text-xs text-slate-500 mt-1">อัปโหลดฟอนต์แล้วสามารถเลือกใช้ใน toolbar ด้านบนได้</p>
                 </div>
 
                 <!-- Save Button -->
@@ -1083,11 +1035,9 @@
         </div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/dom-to-image/2.6.0/dom-to-image.min.js"></script>
-
     <script>
         // ============================================
-        // A4 Image Layout Application v3.0
+        // A4 Image Layout Application v4.0
         // Multi-image frames + Orientation + High Quality Export
         // ============================================
 
@@ -1158,21 +1108,15 @@
                 addTextBoxBtn: document.getElementById('addTextBoxBtn'),
                 textEditorModal: document.getElementById('textEditorModal'),
                 closeTextEditorModal: document.getElementById('closeTextEditorModal'),
-                textEditorContent: document.getElementById('textEditorContent'),
-                textEditorFontFamily: document.getElementById('textEditorFontFamily'),
-                textEditorFontSize: document.getElementById('textEditorFontSize'),
-                textEditorBold: document.getElementById('textEditorBold'),
-                textEditorItalic: document.getElementById('textEditorItalic'),
-                textEditorUnderline: document.getElementById('textEditorUnderline'),
-                textEditorColor: document.getElementById('textEditorColor'),
-                textEditorAlignLeft: document.getElementById('textEditorAlignLeft'),
-                textEditorAlignCenter: document.getElementById('textEditorAlignCenter'),
-                textEditorAlignRight: document.getElementById('textEditorAlignRight'),
+                quillEditor: document.getElementById('quillEditor'),
                 saveTextEditor: document.getElementById('saveTextEditor'),
                 cancelTextEditor: document.getElementById('cancelTextEditor'),
                 uploadCustomFontBtn: document.getElementById('uploadCustomFontBtn'),
                 customFontInput: document.getElementById('customFontInput')
             };
+
+            // Initialize Quill Editor
+            let quill = null;
 
             // ============================================
             // Utility Functions
@@ -1479,35 +1423,45 @@
             // Text Box Functions
             // ============================================
 
+            function initializeQuill() {
+                if (!quill) {
+                    // Quill configuration with custom fonts
+                    const Font = Quill.import('formats/font');
+                    Font.whitelist = ['Sarabun', 'Arial', 'Times-New-Roman', 'Courier-New', 'Georgia', 'Verdana'];
+                    Quill.register(Font, true);
+
+                    quill = new Quill('#quillEditor', {
+                        theme: 'snow',
+                        placeholder: 'พิมพ์ข้อความที่นี่... รองรับ Rich Text, วาง (Paste) จากที่อื่นได้',
+                        modules: {
+                            toolbar: [
+                                [{ 'font': ['Sarabun', 'Arial', 'Times-New-Roman', 'Courier-New', 'Georgia', 'Verdana'] }],
+                                [{ 'size': ['small', false, 'large', 'huge'] }],
+                                ['bold', 'italic', 'underline', 'strike'],
+                                [{ 'color': [] }, { 'background': [] }],
+                                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                                [{ 'align': [] }],
+                                ['link'],
+                                ['clean']
+                            ]
+                        }
+                    });
+                }
+            }
+
             function openTextEditor(textId = null) {
+                initializeQuill();
                 state.currentTextId = textId;
 
                 if (textId) {
                     // Edit existing textbox
                     const obj = getObjectById(textId);
                     if (obj && obj.type === 'textbox') {
-                        elements.textEditorContent.value = obj.content;
-                        elements.textEditorFontFamily.value = obj.fontFamily;
-                        elements.textEditorFontSize.value = obj.fontSize;
-                        elements.textEditorColor.value = obj.color;
-
-                        // Set formatting buttons
-                        elements.textEditorBold.dataset.active = obj.bold ? 'true' : 'false';
-                        elements.textEditorItalic.dataset.active = obj.italic ? 'true' : 'false';
-                        elements.textEditorUnderline.dataset.active = obj.underline ? 'true' : 'false';
-
-                        updateFormattingButtons();
+                        quill.root.innerHTML = obj.htmlContent || obj.content || '';
                     }
                 } else {
-                    // New textbox - reset form
-                    elements.textEditorContent.value = 'ข้อความใหม่';
-                    elements.textEditorFontFamily.value = 'Sarabun';
-                    elements.textEditorFontSize.value = '16';
-                    elements.textEditorColor.value = '#000000';
-                    elements.textEditorBold.dataset.active = 'false';
-                    elements.textEditorItalic.dataset.active = 'false';
-                    elements.textEditorUnderline.dataset.active = 'false';
-                    updateFormattingButtons();
+                    // New textbox - reset
+                    quill.setText('ข้อความใหม่');
                 }
 
                 elements.textEditorModal.classList.add('active');
@@ -1519,21 +1473,17 @@
             }
 
             function saveTextBox() {
-                const content = elements.textEditorContent.value.trim();
-                if (!content) {
+                const htmlContent = quill.root.innerHTML;
+                const textContent = quill.getText().trim();
+
+                if (!textContent) {
                     alert('กรุณากรอกข้อความ');
                     return;
                 }
 
                 const textData = {
-                    content: content,
-                    fontFamily: elements.textEditorFontFamily.value,
-                    fontSize: parseInt(elements.textEditorFontSize.value),
-                    color: elements.textEditorColor.value,
-                    bold: elements.textEditorBold.dataset.active === 'true',
-                    italic: elements.textEditorItalic.dataset.active === 'true',
-                    underline: elements.textEditorUnderline.dataset.active === 'true',
-                    align: getActiveTextAlign()
+                    htmlContent: htmlContent,
+                    content: textContent
                 };
 
                 if (state.currentTextId) {
@@ -1564,32 +1514,10 @@
                 closeTextEditor();
             }
 
-            function updateFormattingButtons() {
-                const boldActive = elements.textEditorBold.dataset.active === 'true';
-                const italicActive = elements.textEditorItalic.dataset.active === 'true';
-                const underlineActive = elements.textEditorUnderline.dataset.active === 'true';
-
-                elements.textEditorBold.style.background = boldActive ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : '#e2e8f0';
-                elements.textEditorBold.style.color = boldActive ? 'white' : '#475569';
-
-                elements.textEditorItalic.style.background = italicActive ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : '#e2e8f0';
-                elements.textEditorItalic.style.color = italicActive ? 'white' : '#475569';
-
-                elements.textEditorUnderline.style.background = underlineActive ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : '#e2e8f0';
-                elements.textEditorUnderline.style.color = underlineActive ? 'white' : '#475569';
-            }
-
-            function getActiveTextAlign() {
-                if (elements.textEditorAlignLeft.dataset.active === 'true') return 'left';
-                if (elements.textEditorAlignCenter.dataset.active === 'true') return 'center';
-                if (elements.textEditorAlignRight.dataset.active === 'true') return 'right';
-                return 'left';
-            }
-
             function handleCustomFontUpload(file) {
                 if (!file) return;
 
-                const fontName = file.name.replace(/\.(ttf|otf|woff|woff2)$/i, '');
+                const fontName = file.name.replace(/\.(ttf|otf|woff|woff2)$/i, '').replace(/[^a-zA-Z0-9-]/g, '-');
                 const reader = new FileReader();
 
                 reader.onload = (e) => {
@@ -1603,15 +1531,15 @@
                         if (!state.customFonts.includes(fontName)) {
                             state.customFonts.push(fontName);
 
-                            // Add to font selector
-                            const option = document.createElement('option');
-                            option.value = fontName;
-                            option.textContent = fontName;
-                            elements.textEditorFontFamily.appendChild(option);
-                            elements.textEditorFontFamily.value = fontName;
-                        }
+                            // Re-initialize Quill with updated fonts
+                            if (quill) {
+                                const Font = Quill.import('formats/font');
+                                Font.whitelist = ['Sarabun', 'Arial', 'Times-New-Roman', 'Courier-New', 'Georgia', 'Verdana', ...state.customFonts];
+                                Quill.register(Font, true);
+                            }
 
-                        alert(`โหลดฟอนต์ "${fontName}" สำเร็จ!`);
+                            alert(`โหลดฟอนต์ "${fontName}" สำเร็จ! เลือกใช้ได้จาก toolbar ของ Editor`);
+                        }
                     }).catch((error) => {
                         console.error('Font loading failed:', error);
                         alert('โหลดฟอนต์ล้มเหลว กรุณาลองใหม่');
@@ -1965,20 +1893,14 @@
 
             function renderTextBox(container, obj) {
                 const textDiv = document.createElement('div');
+                textDiv.className = 'ql-editor'; // Use Quill's editor class for consistent styling
                 textDiv.style.width = '100%';
                 textDiv.style.height = '100%';
                 textDiv.style.padding = '8px';
                 textDiv.style.overflow = 'auto';
                 textDiv.style.wordWrap = 'break-word';
-                textDiv.style.fontFamily = obj.fontFamily;
-                textDiv.style.fontSize = obj.fontSize + 'px';
-                textDiv.style.color = obj.color;
-                textDiv.style.fontWeight = obj.bold ? 'bold' : 'normal';
-                textDiv.style.fontStyle = obj.italic ? 'italic' : 'normal';
-                textDiv.style.textDecoration = obj.underline ? 'underline' : 'none';
-                textDiv.style.textAlign = obj.align;
-                textDiv.style.whiteSpace = 'pre-wrap';
-                textDiv.textContent = obj.content;
+                textDiv.style.background = 'white';
+                textDiv.innerHTML = obj.htmlContent || obj.content || '';
 
                 // Double-click to edit
                 textDiv.addEventListener('dblclick', (e) => {
@@ -2400,42 +2322,6 @@
             elements.closeTextEditorModal.addEventListener('click', closeTextEditor);
             elements.cancelTextEditor.addEventListener('click', closeTextEditor);
             elements.saveTextEditor.addEventListener('click', saveTextBox);
-
-            // Text editor formatting buttons
-            elements.textEditorBold.addEventListener('click', () => {
-                const isActive = elements.textEditorBold.dataset.active === 'true';
-                elements.textEditorBold.dataset.active = isActive ? 'false' : 'true';
-                updateFormattingButtons();
-            });
-
-            elements.textEditorItalic.addEventListener('click', () => {
-                const isActive = elements.textEditorItalic.dataset.active === 'true';
-                elements.textEditorItalic.dataset.active = isActive ? 'false' : 'true';
-                updateFormattingButtons();
-            });
-
-            elements.textEditorUnderline.addEventListener('click', () => {
-                const isActive = elements.textEditorUnderline.dataset.active === 'true';
-                elements.textEditorUnderline.dataset.active = isActive ? 'false' : 'true';
-                updateFormattingButtons();
-            });
-
-            // Text align buttons
-            [elements.textEditorAlignLeft, elements.textEditorAlignCenter, elements.textEditorAlignRight].forEach(btn => {
-                btn.addEventListener('click', () => {
-                    [elements.textEditorAlignLeft, elements.textEditorAlignCenter, elements.textEditorAlignRight].forEach(b => {
-                        b.dataset.active = 'false';
-                        b.style.background = '#e2e8f0';
-                        b.style.color = '#475569';
-                    });
-                    btn.dataset.active = 'true';
-                    btn.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
-                    btn.style.color = 'white';
-                });
-            });
-
-            // Initialize default align
-            elements.textEditorAlignLeft.dataset.active = 'true';
 
             // Custom font upload
             elements.uploadCustomFontBtn.addEventListener('click', () => {
