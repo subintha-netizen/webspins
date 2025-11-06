@@ -94,6 +94,33 @@
             border-radius: 4px;
         }
 
+        /* Image Frame (placeholder) */
+        .image-frame {
+            border: 3px dashed #cbd5e1;
+            background: rgba(241, 245, 249, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #94a3b8;
+            font-size: 14px;
+            font-weight: 500;
+            text-align: center;
+            padding: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .image-frame:hover {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.05);
+            color: #667eea;
+        }
+
+        .image-frame.drag-over {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+        }
+
         /* Resize handle */
         .resize-handle {
             position: absolute;
@@ -154,14 +181,13 @@
             border-color: #f43f5e;
         }
 
-        /* Text certification styling */
+        /* Text certification styling - NO BORDER, NO BACKGROUND */
         .text-certification {
             padding: 16px;
             text-align: center;
             line-height: 1.6;
-            background: linear-gradient(to bottom, #ffffff 0%, #f8fafc 100%);
-            border-radius: 8px;
-            border: 2px solid #e2e8f0;
+            background: transparent;
+            border: none;
         }
 
         .text-certification .line1 {
@@ -172,7 +198,7 @@
         }
 
         .text-certification .signature-area {
-            min-height: 60px;
+            min-height: 80px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -183,7 +209,7 @@
             cursor: crosshair;
             border: 2px dashed #cbd5e1;
             border-radius: 6px;
-            background: rgba(248, 250, 252, 0.5);
+            background: rgba(248, 250, 252, 0.3);
             transition: all 0.3s ease;
         }
 
@@ -204,10 +230,62 @@
             color: #64748b;
         }
 
-        .signature-placeholder {
-            color: #94a3b8;
-            font-size: 14px;
-            font-style: italic;
+        /* Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(8px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            max-width: 90vw;
+            max-height: 90vh;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: 40px;
+            height: 40px;
+            background: #f1f5f9;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .modal-close:hover {
+            background: #e2e8f0;
+        }
+
+        .signature-modal-canvas {
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            cursor: crosshair;
+            background: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
 
         /* Loading overlay */
@@ -458,6 +536,28 @@
         </div>
     </div>
 
+    <!-- Signature Modal -->
+    <div class="modal" id="signatureModal">
+        <div class="modal-content">
+            <button class="modal-close" id="closeSignatureModal" aria-label="ปิด">
+                <i data-lucide="x" class="w-6 h-6 text-slate-600"></i>
+            </button>
+            <h2 class="text-2xl font-bold text-slate-800 mb-4 text-center">ขยายแป้นเซ็นเอกสาร</h2>
+            <p class="text-sm text-slate-600 mb-4 text-center">วาดลายเซ็นของคุณในพื้นที่ด้านล่าง</p>
+            <canvas id="signatureModalCanvas" class="signature-modal-canvas" width="1200" height="400"></canvas>
+            <div class="flex gap-3 mt-6 justify-center">
+                <button id="clearModalSignature" class="px-6 py-3 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition font-semibold flex items-center gap-2">
+                    <i data-lucide="eraser" class="w-5 h-5"></i>
+                    ล้างลายเซ็น
+                </button>
+                <button id="saveModalSignature" class="px-6 py-3 gradient-btn text-white rounded-lg font-semibold flex items-center gap-2">
+                    <i data-lucide="check" class="w-5 h-5"></i>
+                    บันทึกลายเซ็น
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Main Container -->
     <div class="flex flex-col md:flex-row h-screen">
         <!-- Sidebar -->
@@ -495,6 +595,23 @@
                         <i data-lucide="info" class="w-3 h-3"></i>
                         รองรับ: JPG, PNG, GIF, WebP
                     </p>
+                </div>
+
+                <!-- Image Frame -->
+                <div class="sidebar-section fade-in">
+                    <div class="section-header">
+                        <i data-lucide="frame" class="w-5 h-5"></i>
+                        <span>เฟรมรวมภาพ</span>
+                    </div>
+                    <button
+                        id="addImageFrameBtn"
+                        class="w-full px-4 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-lg hover:from-cyan-600 hover:to-blue-600 transition-all text-sm font-semibold shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+                        aria-label="เพิ่มเฟรมรูปภาพ"
+                    >
+                        <i data-lucide="plus-square" class="w-4 h-4"></i>
+                        เพิ่มเฟรมรูปภาพ
+                    </button>
+                    <p class="text-xs text-slate-500 mt-2">ลากรูปมาวางในเฟรมได้</p>
                 </div>
 
                 <!-- Text Certification -->
@@ -559,6 +676,14 @@
 
                         <div class="pt-2 border-t border-slate-200">
                             <button
+                                id="expandSignatureBtn"
+                                class="w-full px-4 py-2.5 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-lg hover:from-indigo-600 hover:to-purple-600 transition-all text-sm font-semibold shadow-md hover:shadow-lg flex items-center justify-center gap-2 mb-2"
+                                aria-label="ขยายแป้นเซ็น"
+                            >
+                                <i data-lucide="maximize-2" class="w-4 h-4"></i>
+                                ขยายแป้นเซ็นเอกสาร
+                            </button>
+                            <button
                                 id="clearSignatureBtn"
                                 class="w-full px-4 py-2.5 bg-gradient-to-r from-rose-500 to-pink-500 text-white rounded-lg hover:from-rose-600 hover:to-pink-600 transition-all text-sm font-semibold shadow-md hover:shadow-lg flex items-center justify-center gap-2"
                                 aria-label="เคลียร์ลายเซ็น"
@@ -613,7 +738,11 @@
                         </div>
                         <div class="flex items-start gap-2">
                             <span class="text-purple-600">•</span>
-                            <p>คลิก/แตะเพื่อเลือกวัตถุบนกระดาษ</p>
+                            <p>คลิก "เพิ่มเฟรมรูปภาพ" แล้วลากรูปมาวางในเฟรม</p>
+                        </div>
+                        <div class="flex items-start gap-2">
+                            <span class="text-purple-600">•</span>
+                            <p>เปิด "รับรองสำเนา" กด "ขยายแป้นเซ็น" เพื่อเซ็นชื่อ</p>
                         </div>
                         <div class="flex items-start gap-2">
                             <span class="text-purple-600">•</span>
@@ -621,11 +750,7 @@
                         </div>
                         <div class="flex items-start gap-2">
                             <span class="text-purple-600">•</span>
-                            <p>เปิด "รับรองสำเนา" แล้ววาดลายเซ็นบนชื่อ</p>
-                        </div>
-                        <div class="flex items-start gap-2">
-                            <span class="text-purple-600">•</span>
-                            <p>ดาวน์โหลดเป็น PDF หรือ JPG คุณภาพสูง</p>
+                            <p>ดาวน์โหลดเป็น PDF หรือ JPG ขนาด A4</p>
                         </div>
                     </div>
                 </div>
@@ -640,8 +765,8 @@
 
     <script>
         // ============================================
-        // A4 Image Layout Application v2.0
-        // Enhanced UX/UI with Thai Government Document Style
+        // A4 Image Layout Application v2.1
+        // Enhanced with signature modal and image frames
         // ============================================
 
         (function() {
@@ -663,8 +788,8 @@
                 certification: {
                     show: false,
                     name: '(นายสมศักดิ์ รักชาติ)',
-                    gap1: 15, // Gap between signature and name
-                    gap2: 8,  // Gap between name and date
+                    gap1: 15,
+                    gap2: 8,
                     signatureStrokes: []
                 }
             };
@@ -675,6 +800,7 @@
             const elements = {
                 paper: document.getElementById('a4-paper'),
                 imageUpload: document.getElementById('imageUpload'),
+                addImageFrameBtn: document.getElementById('addImageFrameBtn'),
                 showCertification: document.getElementById('showCertification'),
                 certificationControls: document.getElementById('certificationControls'),
                 certifierName: document.getElementById('certifierName'),
@@ -682,13 +808,19 @@
                 gap2Slider: document.getElementById('gap2Slider'),
                 gap1Value: document.getElementById('gap1Value'),
                 gap2Value: document.getElementById('gap2Value'),
+                expandSignatureBtn: document.getElementById('expandSignatureBtn'),
                 clearSignatureBtn: document.getElementById('clearSignatureBtn'),
                 exportFormat: document.getElementById('exportFormat'),
                 downloadBtn: document.getElementById('downloadBtn'),
                 loadingOverlay: document.getElementById('loadingOverlay'),
                 instructionsToggle: document.getElementById('instructionsToggle'),
                 instructionsContent: document.getElementById('instructionsContent'),
-                instructionsIcon: document.getElementById('instructionsIcon')
+                instructionsIcon: document.getElementById('instructionsIcon'),
+                signatureModal: document.getElementById('signatureModal'),
+                signatureModalCanvas: document.getElementById('signatureModalCanvas'),
+                closeSignatureModal: document.getElementById('closeSignatureModal'),
+                clearModalSignature: document.getElementById('clearModalSignature'),
+                saveModalSignature: document.getElementById('saveModalSignature')
             };
 
             // ============================================
@@ -785,6 +917,42 @@
             }
 
             // ============================================
+            // Image Frame
+            // ============================================
+
+            function addImageFrame() {
+                const paperRect = elements.paper.getBoundingClientRect();
+
+                const frameObj = {
+                    id: generateId(),
+                    type: 'frame',
+                    x: paperRect.width / 2 - 150,
+                    y: paperRect.height / 2 - 100,
+                    width: 300,
+                    height: 200,
+                    rotation: 0,
+                    imageSrc: null
+                };
+
+                addObject(frameObj);
+                selectObject(frameObj.id);
+            }
+
+            function handleFrameDrop(frameId, file) {
+                if (!file.type.match('image.*')) return;
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const obj = getObjectById(frameId);
+                    if (obj && obj.type === 'frame') {
+                        obj.imageSrc = e.target.result;
+                        updateObjectElement(obj);
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+
+            // ============================================
             // Image Handling
             // ============================================
 
@@ -867,7 +1035,7 @@
             }
 
             // ============================================
-            // Text Certification (Thai Government Style)
+            // Text Certification
             // ============================================
 
             function updateCertification() {
@@ -881,9 +1049,9 @@
                             id: generateId(),
                             type: 'text',
                             x: paperRect.width / 2 - 125,
-                            y: paperRect.height - 200,
+                            y: paperRect.height - 220,
                             width: 250,
-                            height: 180,
+                            height: 200,
                             rotation: 0,
                             name: state.certification.name,
                             gap1: state.certification.gap1,
@@ -911,6 +1079,107 @@
             }
 
             // ============================================
+            // Signature Modal
+            // ============================================
+
+            function openSignatureModal() {
+                elements.signatureModal.classList.add('active');
+                renderModalSignature();
+                if (window.lucide) {
+                    window.lucide.createIcons();
+                }
+            }
+
+            function closeSignatureModalFn() {
+                elements.signatureModal.classList.remove('active');
+            }
+
+            function renderModalSignature() {
+                const canvas = elements.signatureModalCanvas;
+                const ctx = canvas.getContext('2d');
+
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // Draw existing strokes
+                if (state.certification.signatureStrokes && state.certification.signatureStrokes.length > 0) {
+                    ctx.strokeStyle = '#1e293b';
+                    ctx.lineWidth = 4;
+                    ctx.lineCap = 'round';
+                    ctx.lineJoin = 'round';
+
+                    state.certification.signatureStrokes.forEach(stroke => {
+                        if (stroke.length < 2) return;
+                        ctx.beginPath();
+                        ctx.moveTo(stroke[0].x * canvas.width, stroke[0].y * canvas.height);
+                        for (let i = 1; i < stroke.length; i++) {
+                            ctx.lineTo(stroke[i].x * canvas.width, stroke[i].y * canvas.height);
+                        }
+                        ctx.stroke();
+                    });
+                }
+            }
+
+            function clearModalSignatureFn() {
+                state.certification.signatureStrokes = [];
+                renderModalSignature();
+            }
+
+            function saveModalSignatureFn() {
+                updateCertification();
+                closeSignatureModalFn();
+            }
+
+            // Setup modal canvas drawing
+            function setupModalCanvas() {
+                const canvas = elements.signatureModalCanvas;
+                let isDrawing = false;
+
+                const startDrawing = (e) => {
+                    e.preventDefault();
+                    isDrawing = true;
+
+                    const rect = canvas.getBoundingClientRect();
+                    const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+                    const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+
+                    const x = (clientX - rect.left) / rect.width;
+                    const y = (clientY - rect.top) / rect.height;
+
+                    state.certification.signatureStrokes.push([{ x, y }]);
+                };
+
+                const draw = (e) => {
+                    if (!isDrawing) return;
+                    e.preventDefault();
+
+                    const rect = canvas.getBoundingClientRect();
+                    const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+                    const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+
+                    const x = (clientX - rect.left) / rect.width;
+                    const y = (clientY - rect.top) / rect.height;
+
+                    const currentStroke = state.certification.signatureStrokes[state.certification.signatureStrokes.length - 1];
+                    currentStroke.push({ x, y });
+
+                    renderModalSignature();
+                };
+
+                const stopDrawing = () => {
+                    isDrawing = false;
+                };
+
+                canvas.addEventListener('mousedown', startDrawing);
+                canvas.addEventListener('mousemove', draw);
+                canvas.addEventListener('mouseup', stopDrawing);
+                canvas.addEventListener('mouseleave', stopDrawing);
+
+                canvas.addEventListener('touchstart', startDrawing, { passive: false });
+                canvas.addEventListener('touchmove', draw, { passive: false });
+                canvas.addEventListener('touchend', stopDrawing);
+            }
+
+            // ============================================
             // Rendering
             // ============================================
 
@@ -930,36 +1199,68 @@
                     img.src = obj.src;
                     img.alt = 'Uploaded image';
                     div.appendChild(img);
+                } else if (obj.type === 'frame') {
+                    const frameDiv = document.createElement('div');
+                    frameDiv.className = 'image-frame';
+
+                    if (obj.imageSrc) {
+                        const img = document.createElement('img');
+                        img.src = obj.imageSrc;
+                        img.style.width = '100%';
+                        img.style.height = '100%';
+                        img.style.objectFit = 'contain';
+                        frameDiv.appendChild(img);
+                    } else {
+                        frameDiv.innerHTML = '<div><i data-lucide="image" class="w-8 h-8 mx-auto mb-2"></i><br>ลากรูปมาวางที่นี่</div>';
+                    }
+
+                    // Drag and drop
+                    frameDiv.addEventListener('dragover', (e) => {
+                        e.preventDefault();
+                        frameDiv.classList.add('drag-over');
+                    });
+
+                    frameDiv.addEventListener('dragleave', () => {
+                        frameDiv.classList.remove('drag-over');
+                    });
+
+                    frameDiv.addEventListener('drop', (e) => {
+                        e.preventDefault();
+                        frameDiv.classList.remove('drag-over');
+
+                        const files = e.dataTransfer.files;
+                        if (files.length > 0) {
+                            handleFrameDrop(obj.id, files[0]);
+                        }
+                    });
+
+                    div.appendChild(frameDiv);
                 } else if (obj.type === 'text') {
                     const textDiv = document.createElement('div');
                     textDiv.className = 'text-certification';
 
-                    // Line 1: "สำเนาถูกต้อง"
                     const line1 = document.createElement('div');
                     line1.className = 'line1';
                     line1.textContent = 'สำเนาถูกต้อง';
                     textDiv.appendChild(line1);
 
-                    // Signature area
                     const sigArea = document.createElement('div');
                     sigArea.className = 'signature-area';
                     sigArea.style.marginTop = '8px';
 
                     const canvas = document.createElement('canvas');
                     canvas.className = 'signature-canvas';
-                    canvas.width = 200 * 2;  // High resolution
-                    canvas.height = 60 * 2;
-                    canvas.style.width = '200px';
-                    canvas.style.height = '60px';
+                    canvas.width = 220 * 2;
+                    canvas.height = 80 * 2;
+                    canvas.style.width = '220px';
+                    canvas.style.height = '80px';
 
                     sigArea.appendChild(canvas);
                     textDiv.appendChild(sigArea);
 
-                    // Render existing strokes
                     if (obj.signatureStrokes && obj.signatureStrokes.length > 0) {
                         renderSignatureStrokes(canvas, obj.signatureStrokes);
                     } else {
-                        // Show placeholder
                         const ctx = canvas.getContext('2d');
                         ctx.clearRect(0, 0, canvas.width, canvas.height);
                         ctx.font = '24px Sarabun';
@@ -968,18 +1269,15 @@
                         ctx.fillText('(วาดลายเซ็นที่นี่)', canvas.width / 2, canvas.height / 2 + 8);
                     }
 
-                    // Setup drawing events
                     canvas.addEventListener('mousedown', (e) => startDrawing(e, canvas, obj));
                     canvas.addEventListener('touchstart', (e) => startDrawing(e, canvas, obj), { passive: false });
 
-                    // Line 2: Name (with gap1)
                     const line2 = document.createElement('div');
                     line2.className = 'line2';
                     line2.style.marginTop = obj.gap1 + 'px';
                     line2.textContent = obj.name;
                     textDiv.appendChild(line2);
 
-                    // Line 3: Date (with gap2)
                     const line3 = document.createElement('div');
                     line3.className = 'line3';
                     line3.style.marginTop = obj.gap2 + 'px';
@@ -1029,7 +1327,6 @@
                     handle.addEventListener('touchstart', (e) => startResize(e, obj.id), { passive: false });
                 }
 
-                // Event listeners
                 div.addEventListener('mousedown', (e) => startDrag(e, obj.id));
                 div.addEventListener('touchstart', (e) => startDrag(e, obj.id), { passive: false });
 
@@ -1050,28 +1347,45 @@
                 element.style.height = obj.height + 'px';
                 element.style.transform = `rotate(${obj.rotation}deg)`;
 
-                if (obj.type === 'text') {
+                if (obj.type === 'frame') {
+                    const frameDiv = element.querySelector('.image-frame');
+                    if (frameDiv) {
+                        frameDiv.innerHTML = '';
+                        if (obj.imageSrc) {
+                            const img = document.createElement('img');
+                            img.src = obj.imageSrc;
+                            img.style.width = '100%';
+                            img.style.height = '100%';
+                            img.style.objectFit = 'contain';
+                            frameDiv.appendChild(img);
+                        } else {
+                            frameDiv.innerHTML = '<div><i data-lucide="image" class="w-8 h-8 mx-auto mb-2"></i><br>ลากรูปมาวางที่นี่</div>';
+                        }
+
+                        if (window.lucide) {
+                            window.lucide.createIcons();
+                        }
+                    }
+                } else if (obj.type === 'text') {
                     const textDiv = element.querySelector('.text-certification');
                     if (textDiv) {
                         textDiv.innerHTML = '';
 
-                        // Line 1
                         const line1 = document.createElement('div');
                         line1.className = 'line1';
                         line1.textContent = 'สำเนาถูกต้อง';
                         textDiv.appendChild(line1);
 
-                        // Signature area
                         const sigArea = document.createElement('div');
                         sigArea.className = 'signature-area';
                         sigArea.style.marginTop = '8px';
 
                         const canvas = document.createElement('canvas');
                         canvas.className = 'signature-canvas';
-                        canvas.width = 200 * 2;
-                        canvas.height = 60 * 2;
-                        canvas.style.width = '200px';
-                        canvas.style.height = '60px';
+                        canvas.width = 220 * 2;
+                        canvas.height = 80 * 2;
+                        canvas.style.width = '220px';
+                        canvas.style.height = '80px';
 
                         sigArea.appendChild(canvas);
                         textDiv.appendChild(sigArea);
@@ -1090,14 +1404,12 @@
                         canvas.addEventListener('mousedown', (e) => startDrawing(e, canvas, obj));
                         canvas.addEventListener('touchstart', (e) => startDrawing(e, canvas, obj), { passive: false });
 
-                        // Line 2
                         const line2 = document.createElement('div');
                         line2.className = 'line2';
                         line2.style.marginTop = obj.gap1 + 'px';
                         line2.textContent = obj.name;
                         textDiv.appendChild(line2);
 
-                        // Line 3
                         const line3 = document.createElement('div');
                         line3.className = 'line3';
                         line3.style.marginTop = obj.gap2 + 'px';
@@ -1148,7 +1460,6 @@
                 }
                 obj.signatureStrokes.push([{ x, y }]);
 
-                // Also update global state
                 state.certification.signatureStrokes = obj.signatureStrokes;
 
                 const onMove = (e) => {
@@ -1313,7 +1624,7 @@
             }
 
             // ============================================
-            // Export (Download)
+            // Export (Download) - FIXED FOR A4 SIZE
             // ============================================
 
             async function exportToPDF() {
@@ -1328,13 +1639,14 @@
 
                 try {
                     const canvas = await html2canvas(elements.paper, {
-                        scale: 3,
+                        scale: 4,
                         useCORS: true,
                         backgroundColor: '#ffffff',
-                        logging: false
+                        logging: false,
+                        allowTaint: true
                     });
 
-                    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+                    const imgData = canvas.toDataURL('image/jpeg', 1.0);
 
                     const { jsPDF } = window.jspdf;
                     const pdf = new jsPDF({
@@ -1347,7 +1659,7 @@
                     const pdfHeight = 297;
 
                     pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
-                    pdf.save(`A4-Layout-${Date.now()}.pdf`);
+                    pdf.save(`A4-Document-${Date.now()}.pdf`);
 
                 } catch (error) {
                     console.error('Export to PDF failed:', error);
@@ -1372,17 +1684,18 @@
 
                 try {
                     const canvas = await html2canvas(elements.paper, {
-                        scale: 3,
+                        scale: 4,
                         useCORS: true,
                         backgroundColor: '#ffffff',
-                        logging: false
+                        logging: false,
+                        allowTaint: true
                     });
 
                     canvas.toBlob((blob) => {
                         const url = URL.createObjectURL(blob);
                         const a = document.createElement('a');
                         a.href = url;
-                        a.download = `A4-Layout-${Date.now()}.jpg`;
+                        a.download = `A4-Document-${Date.now()}.jpg`;
                         a.click();
                         URL.revokeObjectURL(url);
 
@@ -1390,7 +1703,7 @@
                         if (state.selectedId) {
                             selectObject(state.selectedId);
                         }
-                    }, 'image/jpeg', 0.95);
+                    }, 'image/jpeg', 1.0);
 
                 } catch (error) {
                     console.error('Export to JPG failed:', error);
@@ -1407,6 +1720,7 @@
             // ============================================
 
             elements.imageUpload.addEventListener('change', handleImageUpload);
+            elements.addImageFrameBtn.addEventListener('click', addImageFrame);
 
             elements.showCertification.addEventListener('change', (e) => {
                 state.certification.show = e.target.checked;
@@ -1431,7 +1745,11 @@
                 updateCertification();
             });
 
+            elements.expandSignatureBtn.addEventListener('click', openSignatureModal);
             elements.clearSignatureBtn.addEventListener('click', clearSignature);
+            elements.closeSignatureModal.addEventListener('click', closeSignatureModalFn);
+            elements.clearModalSignature.addEventListener('click', clearModalSignatureFn);
+            elements.saveModalSignature.addEventListener('click', saveModalSignatureFn);
 
             elements.downloadBtn.addEventListener('click', () => {
                 const format = elements.exportFormat.value;
@@ -1486,11 +1804,13 @@
             // Initialize
             // ============================================
 
+            setupModalCanvas();
+
             if (window.lucide) {
                 window.lucide.createIcons();
             }
 
-            console.log('A4 Image Layout v2.0 - Enhanced UX/UI initialized successfully.');
+            console.log('A4 Image Layout v2.1 initialized successfully.');
 
         })();
     </script>
