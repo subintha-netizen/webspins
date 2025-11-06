@@ -184,6 +184,17 @@
             text-align: center;
         }
 
+        /* Hide borders during export */
+        .exporting .grid-cell {
+            border: none !important;
+            background: transparent !important;
+        }
+
+        .exporting .signature-canvas {
+            border: none !important;
+            background: transparent !important;
+        }
+
         /* Resize handle */
         .resize-handle {
             position: absolute;
@@ -650,6 +661,9 @@
         </div>
     </div>
 
+    <!-- Hidden file input for grid cell uploads -->
+    <input type="file" id="gridCellFileInput" accept="image/*" style="display: none;" />
+
     <!-- Main Container -->
     <div class="flex flex-col md:flex-row h-screen">
         <!-- Sidebar -->
@@ -938,7 +952,8 @@
                 signatureModalCanvas: document.getElementById('signatureModalCanvas'),
                 closeSignatureModal: document.getElementById('closeSignatureModal'),
                 clearModalSignature: document.getElementById('clearModalSignature'),
-                saveModalSignature: document.getElementById('saveModalSignature')
+                saveModalSignature: document.getElementById('saveModalSignature'),
+                gridCellFileInput: document.getElementById('gridCellFileInput')
             };
 
             // ============================================
@@ -1434,6 +1449,16 @@
                         }
                     });
 
+                    // Click to upload
+                    cell.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        // Store current frame and cell info
+                        elements.gridCellFileInput.dataset.frameId = obj.id;
+                        elements.gridCellFileInput.dataset.cellIndex = i;
+                        // Open file dialog
+                        elements.gridCellFileInput.click();
+                    });
+
                     gridDiv.appendChild(cell);
                 }
 
@@ -1778,12 +1803,16 @@
             async function exportToPDF() {
                 showLoading();
 
+                // Hide control elements
                 document.querySelectorAll('.control-buttons, .resize-handle').forEach(el => {
                     el.style.display = 'none';
                 });
                 document.querySelectorAll('.a4-object').forEach(el => {
                     el.classList.remove('selected');
                 });
+
+                // Add exporting class to hide borders
+                elements.paper.classList.add('exporting');
 
                 try {
                     const dataUrl = await domtoimage.toPng(elements.paper, {
@@ -1815,6 +1844,8 @@
                     console.error('Export to PDF failed:', error);
                     alert('เกิดข้อผิดพลาดในการสร้าง PDF');
                 } finally {
+                    // Remove exporting class
+                    elements.paper.classList.remove('exporting');
                     hideLoading();
                     if (state.selectedId) {
                         selectObject(state.selectedId);
@@ -1825,12 +1856,16 @@
             async function exportToJPG() {
                 showLoading();
 
+                // Hide control elements
                 document.querySelectorAll('.control-buttons, .resize-handle').forEach(el => {
                     el.style.display = 'none';
                 });
                 document.querySelectorAll('.a4-object').forEach(el => {
                     el.classList.remove('selected');
                 });
+
+                // Add exporting class to hide borders
+                elements.paper.classList.add('exporting');
 
                 try {
                     const dataUrl = await domtoimage.toJpeg(elements.paper, {
@@ -1850,6 +1885,8 @@
                     a.download = `A4-Document-${Date.now()}.jpg`;
                     a.click();
 
+                    // Remove exporting class
+                    elements.paper.classList.remove('exporting');
                     hideLoading();
                     if (state.selectedId) {
                         selectObject(state.selectedId);
@@ -1858,6 +1895,8 @@
                 } catch (error) {
                     console.error('Export to JPG failed:', error);
                     alert('เกิดข้อผิดพลาดในการสร้าง JPG');
+                    // Remove exporting class
+                    elements.paper.classList.remove('exporting');
                     hideLoading();
                     if (state.selectedId) {
                         selectObject(state.selectedId);
@@ -1871,6 +1910,18 @@
 
             elements.imageUpload.addEventListener('change', handleImageUpload);
             elements.addImageFrameBtn.addEventListener('click', addImageFrame);
+
+            // Grid cell file input handler
+            elements.gridCellFileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const frameId = elements.gridCellFileInput.dataset.frameId;
+                    const cellIndex = parseInt(elements.gridCellFileInput.dataset.cellIndex);
+                    handleFrameDrop(frameId, cellIndex, file);
+                }
+                // Reset the input
+                e.target.value = '';
+            });
 
             elements.orientationPortrait.addEventListener('click', () => setOrientation('portrait'));
             elements.orientationLandscape.addEventListener('click', () => setOrientation('landscape'));
